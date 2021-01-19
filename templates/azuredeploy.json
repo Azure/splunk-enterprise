@@ -1,0 +1,3177 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkAddressPrefix": {
+      "defaultValue": ["192.168.0.0/16"],
+      "type": "array",
+      "metadata": {
+        "description": "VNET address space."
+      }
+    },
+    "indexerSubnetAddressPrefix": {
+      "defaultValue": "192.168.0.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Indexer subnet address space."
+      }
+    },
+    "searchSubnetAddressPrefix": {
+      "defaultValue": "192.168.1.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Search subnet address space."
+      }
+    },
+    "forwarderSubnetAddressPrefix": {
+      "defaultValue": "192.168.2.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Forwarder subnet address space."
+      }
+    },
+    "managementSubnetAddressPrefix": {
+      "defaultValue": "192.168.3.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Management subnet address space."
+      }
+    },
+    "bastionSubnetAddressPrefix": {
+      "defaultValue": "192.168.4.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Bastion subnet address space."
+      }
+    },
+    "appGSubnetAddressPrefix": {
+      "defaultValue": "192.168.5.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "App Gateway subnet address space."
+      }
+    },
+    "linuxUserName": {
+      "type": "string",
+      "defaultValue": "splunkadmin",
+      "metadata": {
+        "description": "User name for linux VMs"
+      }
+    },
+    "linuxSSHKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Public key for SSH authentication"
+      }
+    },
+    "numberOfIndexers": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Number of Indexer VMs"
+      }
+    },
+    "numberOfSearchHeads": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Number of Search Head VMs"
+      }
+    },
+    "indexerSku": {
+      "type": "string",
+      "defaultValue": "Standard_D16ds_v4",
+      "metadata": {
+        "description": "VM SKU for Splunk indexers"
+      }
+    },
+    "searchHeadSku": {
+      "type": "string",
+      "defaultValue": "Standard_D16ds_v4",
+      "metadata": {
+        "description": "VM SKU for Splunk Search Heads"
+      }
+    },
+    "cmSku": {
+      "type": "string",
+      "defaultValue": "Standard_D8ds_v4",
+      "metadata": {
+        "description": "VM SKU for cluster master"
+      }
+    },
+    "dnsPrefix": {
+      "type": "string",
+      "defaultValue": "splunk",
+      "metadata": {
+        "description": "DNS prefix for public IP addresses"
+      }
+    },
+    "vmImage": {
+      "type": "string",
+      "defaultValue": "ubuntu1804",
+      "metadata": {
+        "description": "VM image variable identifier"
+      }
+    },
+    "splunkUser": {
+      "type": "string",
+      "defaultValue": "splunkadmin",
+      "metadata": {
+        "description": "Splunk user name to use during Splunk install"
+      }
+    },
+    "splunkPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password to use during Splunk install"
+      }
+    },
+    "splunkPass4SymmKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Pass4SymmKey to use during Splunk install"
+      }
+    },
+    "indexerPipelines": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Number of parallel ingestion pipelines on Indexer nodes"
+      }
+    },
+    "splunkBlobUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "URL for Splunk Enterprise .tgz file"
+      }
+    },
+    "splunkUfBlobUrl": {
+      "type": "string",
+      "defaultValue": "replace-me",
+      "metadata": {
+        "description": "URL for Splunk UF .tgz file"
+      }
+    },
+    "licenseBlobUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "URL for Splunk Enterprise license file"
+      }
+    },
+    "hotDiskSize": {
+      "type": "int",
+      "defaultValue": 1024,
+      "metadata": {
+        "description": "Disk size for Premium SSD hot volume"
+      }
+    },
+    "coldDiskSize": {
+      "type": "int",
+      "defaultValue": 1024,
+      "metadata": {
+        "description": "Disk size for Standard HDD cold volume"
+      }
+    },
+    "deployHeavyForwarders": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Deploy Heavy Forwarder VMs"
+      }
+    },
+    "deploySyslogReceivers": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Deploy Syslog Receiver VMs"
+      }
+    },
+    "deployHEC": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Configure HEC on Indexers"
+      }
+    },
+    "HECPublicIp": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Configure Public IP for HEC"
+      }
+    },
+    "numberOfForwarders": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Number of Heavy Forwarder VMs"
+      }
+    },
+    "numberOfSyslogRecievers": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Number of Syslog Receivers VMs"
+      }
+    },
+    "hfSku": {
+      "type": "string",
+      "defaultValue": "Standard_D4ds_v4",
+      "metadata": {
+        "description": "SKU for Heavy Forwarder VMs"
+      }
+    },
+    "syslogSku": {
+      "type": "string",
+      "defaultValue": "Standard_D4ds_v4",
+      "metadata": {
+        "description": "SKU for Syslog Receiver VMs"
+      }
+    },
+    "numberOfDeploymentServers": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Number of Deployment Server VMs"
+      }
+    },
+    "deploymentServerSku": {
+      "type": "string",
+      "defaultValue": "Standard_D4ds_v4",
+      "metadata": {
+        "description": "SKU for Deployment Server VMs"
+      }
+    },
+    "shdSku": {
+      "type": "string",
+      "defaultValue": "Standard_D8ds_v4",
+      "metadata": {
+        "description": "SKU for Search Head Deployer VMs"
+      }
+    },
+    "hfPipelines": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Number of parallel ingestion pipelines on HF nodes"
+      }
+    },
+    "licenseMasterSku": {
+      "type": "string",
+      "defaultValue": "Standard_D4ds_v4",
+      "metadata": {
+        "description": "SKU for License Master VM"
+      }
+    },
+    "monitoringConsoleSku": {
+      "type": "string",
+      "defaultValue": "Standard_D16ds_v4",
+      "metadata": {
+        "description": "SKU for Monitoring Console VM"
+      }
+    },
+    "deployBastion": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy Azure Bastion"
+      }
+    },
+    "replicationFactor": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Splunk replication factor"
+      }
+    },
+    "searchFactor": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Splunk replication factor"
+      }
+    },
+    "vmPriority": {
+      "type": "string",
+      "defaultValue": "Regular",
+      "allowedValues": ["Regular", "Spot"],
+      "metadata": {
+        "description": "Priority for all VMs"
+      }
+    },
+    "splunkWebCidr": {
+      "type": "string",
+      "defaultValue": "0.0.0.0/0",
+      "metadata": {
+        "description": "Source CIDR for access to Splunk UI components"
+      }
+    },
+    "splunkSSHCidr": {
+      "type": "string",
+      "defaultValue": "0.0.0.0/0",
+      "metadata": {
+        "description": "Source CIDR for access to Splunk UI components"
+      }
+    },
+    "splunkHecCidr": {
+      "type": "string",
+      "defaultValue": "0.0.0.0/0",
+      "metadata": {
+        "description": "Source CIDR for access to Splunk HEC port"
+      }
+    },
+    "syslogCidr": {
+      "type": "string",
+      "defaultValue": "0.0.0.0/0",
+      "metadata": {
+        "description": "Source CIDR for access to Splunk Syslog Receiver port"
+      }
+    },
+    "downloadRoot": {
+      "type": "string",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/splunk-enterprise/main",
+      "metadata": {
+        "description": "Root directory for Splunk install scripts and config"
+      }
+    },
+    "coldStorageTier": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": ["Standard_LRS", "StandardSSD_LRS", "Premium_LRS"],
+      "metadata": {
+        "description": "Storage tier for cold volume attached disk"
+      }
+    },
+    "dnsZoneName": {
+      "type": "string",
+      "defaultValue": "splunk.azure",
+      "metadata": {
+        "description": "Name for internal private DNS zone"
+      }
+    },
+    "clusterMasterPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Cluster Master VM"
+      }
+    },
+    "licenseMasterPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to License Master VM"
+      }
+    },
+    "shdPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Search Head Deployer VM"
+      }
+    },
+    "monitoringPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Monitoring Console VM"
+      }
+    },
+    "indexerPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Indexer VMs"
+      }
+    },
+    "shPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Search Head VMs"
+      }
+    },
+    "hfPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Heavy Forwarder VMs"
+      }
+    },
+    "syslogPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Syslog VMs"
+      }
+    },
+    "dsPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Deployment Server VMs"
+      }
+    },
+    "dsLbPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Deployment Server Load Balancer"
+      }
+    },
+    "syslogLbPip": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Attach public IP to Syslog Receiver Load Balancer"
+      }
+    }
+  },
+  "variables": {
+    "resgpguid": "[substring(replace(guid(resourceGroup().id), '-', ''), 0, 4)]",
+    "vnetName": "splunkvnet",
+    "indexerSubnetName": "indexer",
+    "searchSubnetName": "search",
+    "managementSubnetName": "management",
+    "forwarderSubnetName": "forwarders",
+    "indexerSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('indexerSubnetName'))]",
+    "searchSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('searchSubnetName'))]",
+    "managementSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('managementSubnetName'))]",
+    "forwarderSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('forwarderSubnetName'))]",
+    "bastionSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'AzureBastionSubnet')]",
+    "downloadRoot": "[parameters('downloadRoot')]",
+    "installScriptPath": "[concat(variables('downloadRoot'), '/scripts/common/install.sh')]",
+    "syslogInstallScriptPath": "[concat(variables('downloadRoot'), '/scripts/syslog/install.sh')]",
+    "configPath": "[concat(variables('downloadRoot'), '/config')]",
+    "splunkDownload": "[parameters('splunkBlobUrl')]",
+    "splunkUfDownload": "[parameters('splunkUfBlobUrl')]",
+    "dnsZoneName": "[parameters('dnsZoneName')]",
+    "cmZone": "1",
+    "shdZone": "1",
+    "monitoringZone": "1",
+    "licenseMasterZone": "1",
+    "isL": "[contains(parameters('indexerSku'), '_L')]",
+    "vmType": "[if(variables('isL'), 'lv2disks', 'otherdisks')]",
+    "splunkAppDiskSizeGb": 512,
+    "dsLbFrontEnd": "[if(parameters('dsLbPip'), variables('publicDsLbFrontend'), variables('privateDsLbFrontend'))]",
+    "publicDsLbFrontend": {
+      "name": "LoadBalancerFrontEnd",
+      "properties": {
+        "publicIPAddress": {
+          "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'dslb')]"
+        }
+      }
+    },
+    "privateDsLbFrontend": {
+      "name": "LoadBalancerFrontEnd",
+      "properties": {
+        "privateIPAllocationMethod": "Dynamic",
+        "subnet": {
+          "id": "[variables('managementSubnetId')]"
+        }
+      }
+    },
+    "syslogLbFrontEnd": "[if(parameters('syslogLbPip'), variables('publicSyslogLbFrontend'), variables('privateSyslogLbFrontend'))]",
+    "publicSyslogLbFrontend": {
+      "name": "LoadBalancerFrontEnd",
+      "properties": {
+        "publicIPAddress": {
+          "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'sysloglb')]"
+        }
+      }
+    },
+    "privateSyslogLbFrontend": {
+      "name": "LoadBalancerFrontEnd",
+      "properties": {
+        "privateIPAllocationMethod": "Dynamic",
+        "subnet": {
+          "id": "[variables('forwarderSubnetId')]"
+        }
+      }
+    },
+    "dsPrivateLbBep": [
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      },
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-outbound-ds'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      }
+    ],
+    "dsPublicLbBep": [
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      }
+    ],
+    "dsNicBep": "[if(parameters('dsLbPip'), variables('dsPublicLbBep'), variables('dsPrivateLbBep'))]",
+    "syslogPrivateLbBep": [
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-syslog'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      },
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-outbound-syslog'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      }
+    ],
+    "syslogPublicLbBep": [
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-syslog'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      }
+    ],
+    "syslogNicBep": "[if(parameters('syslogLbPip'), variables('syslogPublicLbBep'), variables('syslogPrivateLbBep'))]",
+    "HECLbFrontEnd": "[if(parameters('HECPublicIp'), variables('publicHECLbFrontend'), variables('privateHECLbFrontend'))]",
+    "publicHECLbFrontend": {
+      "name": "LoadBalancerFrontEnd",
+      "properties": {
+        "publicIPAddress": {
+          "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'hec')]"
+        }
+      }
+    },
+    "privateHECLbFrontend": {
+      "name": "LoadBalancerFrontEnd",
+      "properties": {
+        "privateIPAllocationMethod": "Dynamic",
+        "subnet": {
+          "id": "[variables('indexerSubnetId')]"
+        }
+      }
+    },
+    "lv2disks": [
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 1,
+        "diskSizeGB": "[parameters('coldDiskSize')]",
+        "managedDisk": {
+          "storageAccountType": "[parameters('coldStorageTier')]"
+        }
+      },
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 0,
+        "diskSizeGB": "[variables('splunkAppDiskSizeGb')]",
+        "managedDisk": {
+          "storageAccountType": "Premium_LRS"
+        }
+      }
+    ],
+    "otherdisks": [
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 1,
+        "diskSizeGB": "[parameters('coldDiskSize')]",
+        "managedDisk": {
+          "storageAccountType": "[parameters('coldStorageTier')]"
+        }
+      },
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 2,
+        "diskSizeGB": "[parameters('hotDiskSize')]",
+        "managedDisk": {
+          "storageAccountType": "Premium_LRS"
+        }
+      },
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 0,
+        "diskSizeGB": "[variables('splunkAppDiskSizeGb')]",
+        "managedDisk": {
+          "storageAccountType": "Premium_LRS"
+        }
+      }
+    ],
+    "clusterMasterPipId": {
+      "id": "[if(parameters('clusterMasterPip'), resourceId('Microsoft.Network/publicIPAddresses', 'clustermaster'), json('null'))]"
+    },
+    "licensemasterPipId": {
+      "id": "[if(parameters('licenseMasterPip'), resourceId('Microsoft.Network/publicIPAddresses', 'licensemaster'), json('null'))]"
+    },
+    "shdPipId": {
+      "id": "[if(parameters('shdPip'), resourceId('Microsoft.Network/publicIPAddresses', 'shd'), json('null'))]"
+    },
+    "monitoringPipId": {
+      "id": "[if(parameters('monitoringPip'), resourceId('Microsoft.Network/publicIPAddresses', 'monitoring'), json('null'))]"
+    },
+    "ubuntu1804": {
+      "publisher": "Canonical",
+      "offer": "UbuntuServer",
+      "sku": "18.04-LTS",
+      "version": "latest"
+    },
+    "centos77": {
+      "publisher": "OpenLogic",
+      "offer": "CentOS",
+      "sku": "7.7",
+      "version": "latest"
+    },
+    "rhel76payg": {
+      "publisher": "RedHat",
+      "offer": "RHEL",
+      "sku": "7.6",
+      "version": "latest"
+    },
+    "appGWIpVar1": "[first(split(parameters('appGSubnetAddressPrefix'), '/'))]",
+    "appGWIpVar2": "[split(variables('appGWIpVar1'), '.')]",
+    "appGwIpVar3": "[add(int(variables('appGWIpVar2')[3]), 4)]",
+    "appGwIp": "[concat(variables('appGWIpVar2')[0], '.', variables('appGWIpVar2')[1], '.', variables('appGWIpVar2')[2], '.', variables('appGwIpVar3'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-05-01",
+      "name": "splunk",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Port_8000",
+            "properties": {
+              "description": "Access to Splunk admin console",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8000",
+              "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Port_8089",
+            "properties": {
+              "description": "Access to Splunk management port",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8089",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 125,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Port_8088",
+            "properties": {
+              "description": "Access to HEC",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8088",
+              "sourceAddressPrefix": "[parameters('splunkHecCidr')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 126,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Port_9997",
+            "properties": {
+              "description": "Splunk receiver",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "9997",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 150,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Port_514",
+            "properties": {
+              "description": "Splunk syslog",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "514",
+              "sourceAddressPrefix": "[parameters('syslogCidr')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 160,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Port_22",
+            "properties": {
+              "description": "SSH access to VMs",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "[parameters('splunkSSHCidr')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "bastion",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-05-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "bastion-https-in-allow",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "Internet",
+              "destinationPortRange": "443",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "bastion-gatewaymanager-in-allow",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "GatewayManager",
+              "destinationPortRanges": ["443", "4443"],
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "bastion-in-deny",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Deny",
+              "priority": 900,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "bastion-vnet-out-allow",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationPortRanges": ["22", "3389"],
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 105,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "bastion-host-communication-in-allow",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationPortRanges": ["8080", "5701"],
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "bastion-loadbalancer-in-allow",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationPortRange": "443",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "bastion-vnet-vnet-out-allow",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "VirtualNetwork",
+              "destinationPortRanges": ["8080", "5701"],
+              "destinationAddressPrefix": "VirtualNetwork",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "bastion-azure-out-allow",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationPortRanges": ["443", "80"],
+              "destinationAddressPrefix": "AzureCloud",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Outbound"
+            }
+          },
+          {
+            "name": "bastion-internet-out-allow",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationPortRange": "80",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Outbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-05-01",
+      "name": "appg",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Port_8000_2",
+            "properties": {
+              "description": "Access to Splunk",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "8000-8002",
+              "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Port_80",
+            "properties": {
+              "description": "Access to Splunk via port 80",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 125,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "appGwAdmin",
+            "properties": {
+              "description": "AppGw required ports",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "65200-65535",
+              "sourceAddressPrefix": "GatewayManager",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 126,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "appGwAdmin2",
+            "properties": {
+              "description": "AppGw required ports",
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "AzureLoadBalancer",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 127,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('vnetName')]",
+      "apiVersion": "2020-05-01",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'splunk')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'appg')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'bastion')]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": "[parameters('virtualNetworkAddressPrefix')]"
+        },
+        "subnets": [
+          {
+            "name": "[variables('indexerSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('indexerSubnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'splunk')]"
+              },
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage"
+                }
+              ]
+            }
+          },
+          {
+            "name": "[variables('searchSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('searchSubnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'splunk')]"
+              },
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage"
+                }
+              ]
+            }
+          },
+          {
+            "name": "[variables('managementSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('managementSubnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'splunk')]"
+              },
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage"
+                }
+              ]
+            }
+          },
+          {
+            "name": "[variables('forwarderSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('forwarderSubnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'splunk')]"
+              },
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage"
+                }
+              ]
+            }
+          },
+          {
+            "name": "AzureBastionSubnet",
+            "properties": {
+              "addressPrefix": "[parameters('bastionSubnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups','bastion')]"
+              }
+            }
+          },
+          {
+            "name": "ApplicationGatewaySubnet",
+            "properties": {
+              "addressPrefix": "[parameters('appGSubnetAddressPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups','appg')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2018-09-01",
+      "name": "[variables('dnsZoneName')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]"
+      ],
+      "location": "global",
+      "properties": {},
+      "resources": [
+        {
+          "name": "vnet-link",
+          "type": "virtualNetworkLinks",
+          "apiVersion": "2018-09-01",
+          "location": "global",
+          "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+            "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
+          ],
+          "properties": {
+            "virtualNetwork": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+            },
+            "registrationEnabled": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('clusterMasterPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "clustermaster",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "clustermaster"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-clustermaster-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('licenseMasterPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "licensemaster",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "licensemaster"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-licensemaster-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('indexerPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('indexer', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "copy": {
+        "name": "indexerpipcopy",
+        "count": "[parameters('numberOfIndexers')]"
+      },
+      "tags": {
+        "displayName": "[concat('indexer', copyindex())]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-indexer', copyindex(), '-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('shPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('sh', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "copy": {
+        "name": "shpipcopy",
+        "count": "[parameters('numberOfSearchHeads')]"
+      },
+      "tags": {
+        "displayName": "[concat('sh', copyindex())]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-sh', copyindex(), '-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('hf', copyindex())]",
+      "condition": "[and(parameters('deployHeavyForwarders'), parameters('hfPip'))]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "copy": {
+        "name": "forwarderpipcopy",
+        "count": "[parameters('numberOfForwarders')]"
+      },
+      "tags": {
+        "displayName": "[concat('hf', copyindex())]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-hf', copyindex(), '-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('syslog', copyindex())]",
+      "condition": "[and(parameters('deploySyslogReceivers'), parameters('syslogPip'))]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "copy": {
+        "name": "syslogpipcopy",
+        "count": "[parameters('numberOfSyslogRecievers')]"
+      },
+      "tags": {
+        "displayName": "[concat('syslog', copyindex())]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-syslog', copyindex(), '-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "condition": "[parameters('dsPip')]",
+      "name": "[concat('ds', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "copy": {
+        "name": "dspipcopy",
+        "count": "[parameters('numberOfDeploymentServers')]"
+      },
+      "tags": {
+        "displayName": "[concat('ds', copyindex())]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-ds', copyindex(), '-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('shdPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "shd",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "shd"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-shd-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('monitoringPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "monitoring",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "monitoring"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-monitoring-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "appg",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "appg"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "hec",
+      "condition": "[parameters('HECPublicIp')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "hec"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-hec-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "clustermaster",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "clustermaster"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/applicationGateways/','splunk-appg')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'splunk-appg'), '/backendAddressPools/clusterMasterBackendPool')]"
+                }
+              ],
+              "publicIPAddress": "[if(parameters('monitoringPip'), variables('clusterMasterPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('managementSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "licensemaster",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "licensemaster"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('licenseMasterPip'), variables('licensemasterPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('managementSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('indexer', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "indexerniccopy",
+        "count": "[parameters('numberOfIndexers')]"
+      },
+      "tags": {
+        "displayName": "[concat('indexer', copyindex())]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('indexerPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('indexer', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('indexerSubnetId')]"
+              },
+              "loadBalancerBackendAddressPools": "[if(parameters('deployHEC'), json(concat('[{\"id\":', '\"', concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-hec'), '/backendAddressPools/LoadBalancerBackEndPool1'), '\"}]')), json('null'))]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('sh', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "shniccopy",
+        "count": "[parameters('numberOfSearchHeads')]"
+      },
+      "tags": {
+        "displayName": "[concat('sh', copyindex())]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/applicationGateways/', 'splunk-appg')]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'splunk-appg'), '/backendAddressPools/searchHeadBackendPool')]"
+                }
+              ],
+              "publicIPAddress": "[if(parameters('shPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('sh', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('searchSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('hf', copyindex())]",
+      "condition": "[parameters('deployHeavyForwarders')]",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "forwarderniccopy",
+        "count": "[parameters('numberOfForwarders')]"
+      },
+      "tags": {
+        "displayName": "[concat('hf', copyindex())]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('hfPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('hf', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('forwarderSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('syslog', copyindex())]",
+      "condition": "[parameters('deploySyslogReceivers')]",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "syslogniccopy",
+        "count": "[parameters('numberOfSyslogRecievers')]"
+      },
+      "tags": {
+        "displayName": "[concat('syslog', copyindex())]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "loadBalancerBackendAddressPools": "[variables('syslogNicBep')]",
+              "publicIPAddress": "[if(parameters('syslogPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('syslog', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('forwarderSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('ds', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "name": "dsniccopy",
+        "count": "[parameters('numberOfDeploymentServers')]"
+      },
+      "tags": {
+        "displayName": "[concat('ds', copyindex())]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/loadBalancers/', 'loadBalancer-ds')]",
+        "[concat('Microsoft.Network/applicationGateways/','splunk-appg')]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'splunk-appg'), '/backendAddressPools/deploymentServerBackendPool')]"
+                }
+              ],
+              "loadBalancerBackendAddressPools": "[variables('dsNicBep')]",
+              "publicIPAddress": "[if(parameters('dsPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('ds', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('managementSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "shd",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "shd"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('shdPip'), variables('shdPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('managementSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "monitoring",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "monitoring"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/applicationGateways/','splunk-appg')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'splunk-appg'), '/backendAddressPools/monitoringConsoleBackendPool')]"
+                }
+              ],
+              "publicIPAddress": "[if(parameters('monitoringPip'), variables('monitoringPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('managementSubnetId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "clustermaster",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": ["[variables('cmZone')]"],
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('cmSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "clustermaster-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('clustermaster-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "clustermaster",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'clustermaster')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'clustermaster')]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/clustermaster', '2019-07-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "licensemaster",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": ["[variables('licenseMasterZone')]"],
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'licensemaster')]"
+      ],
+      "properties": {
+        "priority": "[parameters('vmPriority')]",
+        "hardwareProfile": {
+          "vmSize": "[parameters('licenseMasterSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "license-master-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('license-master-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "licensemaster",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/licensemaster', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-url \"', parameters('licenseBlobUrl'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('indexer', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
+      "copy": {
+        "name": "indexercopy",
+        "count": "[parameters('numberOfIndexers')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'indexer', copyindex())]"
+      ],
+      "properties": {
+        "priority": "[parameters('vmPriority')]",
+        "hardwareProfile": {
+          "vmSize": "[parameters('indexerSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('indexer', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": "[variables(variables('vmType'))]"
+        },
+        "osProfile": {
+          "computerName": "[concat('indexer', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('indexer', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'indexer', copyindex())]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role indexer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/indexer', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --indexer-pipelines ', parameters('indexerPipelines'), ' --vm-sku ', parameters('indexerSku'), ' --dns-zone ', variables('dnsZoneName'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('sh', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
+      "copy": {
+        "name": "shcopy",
+        "count": "[parameters('numberOfSearchHeads')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'sh', copyindex())]"
+      ],
+      "properties": {
+        "priority": "[parameters('vmPriority')]",
+        "hardwareProfile": {
+          "vmSize": "[parameters('searchHeadSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('sh', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('sh', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('sh', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('sh', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'sh', copyindex())]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role search-head --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/sh', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --sh-instance ', copyindex(), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('hf', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "condition": "[parameters('deployHeavyForwarders')]",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
+      "copy": {
+        "name": "hfcopy",
+        "count": "[parameters('numberOfForwarders')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'hf', copyindex())]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('hfSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('hf', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('hf', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('hf', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('hf', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "condition": "[parameters('deployHeavyForwarders')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'hf', copyindex())]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role heavy-forwarder --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --hf-pipelines ', parameters('hfPipelines'), ' --indexer-count ', parameters('numberOfIndexers'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('syslog', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "condition": "[parameters('deploySyslogReceivers')]",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
+      "copy": {
+        "name": "syslogcopy",
+        "count": "[parameters('numberOfSyslogRecievers')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'syslog', copyindex())]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('syslogSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('syslog', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 512,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('syslog', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('syslog', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('syslog', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "condition": "[parameters('deploySyslogReceivers')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'syslog', copyindex())]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('syslogInstallScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role syslog-receiver --splunk-uf-url \"', variables('splunkUfDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('ds', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
+      "copy": {
+        "name": "dscopy",
+        "count": "[parameters('numberOfDeploymentServers')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'ds', copyindex())]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('deploymentServerSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('ds', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('ds', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('ds', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('ds', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'ds', copyindex())]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role deployment-server --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --indexer-count ', parameters('numberOfIndexers'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "shd",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": ["[variables('shdZone')]"],
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('shdSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "shd-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('shd-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "shd",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'shd')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'shd')]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role search-head-deployer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/shd', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --indexer-count ', parameters('numberOfIndexers'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'), ' --dns-zone ', variables('dnsZoneName'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "monitoring",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[resourceGroup().location]",
+      "zones": ["[variables('monitoringZone')]"],
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'monitoring')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('monitoringConsoleSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "monitoring-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('monitoring-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "monitoring",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'monitoring')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'monitoring')]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]",
+            "[resourceId('Microsoft.Network/networkInterfaces','shd')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','licensemaster','config-app')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','shd','config-app')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','sh0','config-app')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','ds0','config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": ["[variables('installScriptPath')]"]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role monitoring-console --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --deploy-heavy-forwarders ', parameters('deployHeavyForwarders'), ' --heavy-forwarder-count ', parameters('numberOfForwarders'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2020-05-01",
+      "name": "splunk-appg",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses/', 'appg')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "sku": {
+          "name": "Standard_v2",
+          "tier": "Standard_v2"
+        },
+        "autoscaleConfiguration": {
+          "minCapacity": 1,
+          "maxCapacity": 10
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'ApplicationGatewaySubnet')]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              "PublicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'appg')]"
+              }
+            }
+          },
+          {
+            "name": "appGatewayFrontendPrivateIP",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'ApplicationGatewaySubnet')]"
+              },
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[variables('appGwIp')]"
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "appGatewayFrontendPort",
+            "properties": {
+              "Port": 80
+            }
+          },
+          {
+            "name": "appGatewayFrontendMonitoringConsolePort",
+            "properties": {
+              "Port": 8000
+            }
+          },
+          {
+            "name": "appGatewayFrontendClusterMasterPort",
+            "properties": {
+              "Port": 8001
+            }
+          },
+          {
+            "name": "appGatewayFrontendDeploymentServerPort",
+            "properties": {
+              "Port": 8002
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendPort",
+            "properties": {
+              "Port": 8080
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendMonitoringConsolePort",
+            "properties": {
+              "Port": 8003
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendClusterMasterPort",
+            "properties": {
+              "Port": 8004
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendDeploymentServerPort",
+            "properties": {
+              "Port": 8005
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "searchHeadBackendPool",
+            "properties": {}
+          },
+          {
+            "name": "monitoringConsoleBackendPool",
+            "properties": {}
+          },
+          {
+            "name": "clusterMasterBackendPool",
+            "properties": {}
+          },
+          {
+            "name": "deploymentServerBackendPool",
+            "properties": {}
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "appGatewayBackendHttpSettings",
+            "properties": {
+              "Port": 8000,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled"
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "searchHeadHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayFrontendPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "searchHeadHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayPrivateFrontendPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "monitoringConsoleHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayFrontendMonitoringConsolePort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "monitoringConsoleHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayPrivateFrontendMonitoringConsolePort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "clusterMasterHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayFrontendClusterMasterPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "clusterMasterHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayPrivateFrontendClusterMasterPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "deploymentServerHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayFrontendDeploymentServerPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "deploymentServerHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'splunk-appg', 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',  'splunk-appg', 'appGatewayPrivateFrontendDeploymentServerPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "Name": "searchHeadRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'searchHeadHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'searchHeadBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "searchHeadPrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'searchHeadHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'searchHeadBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "monitoringConsoleRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'monitoringConsoleHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'monitoringConsoleBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "monitoringConsolePrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'monitoringConsoleHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'monitoringConsoleBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "clusterMasterRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'clusterMasterHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'clusterMasterBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "clusterMasterPrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'clusterMasterHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'clusterMasterBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "deploymentServerRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'deploymentServerHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'deploymentServerBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "deploymentServerPrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'splunk-appg', 'deploymentServerHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'deploymentServerBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('dsLbPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "dslb",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "dslb"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-ds-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "dsOutboundlb",
+      "condition": "[not(parameters('dsLbPip'))]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "dsoutboundlb"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-ds-outbound-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "syslogOutboundlb",
+      "condition": "[not(parameters('syslogLbPip'))]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "syslogoutboundlb"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-syslog-outbound-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('syslogLbPip')]",
+      "apiVersion": "2020-05-01",
+      "name": "sysloglb",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "sysloglb"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-syslog-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "loadBalancer-ds",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": ["[variables('dsLbFrontEnd')]"],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "LBRule1",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds'),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp",
+              "frontendPort": 8089,
+              "backendPort": 8089,
+              "enableFloatingIP": false,
+              "loadDistribution": "SourceIP",
+              "idleTimeoutInMinutes": 5,
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds'),'/probes/tcpProbe')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "tcpProbe",
+            "properties": {
+              "protocol": "tcp",
+              "port": 8089,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "loadBalancer-outbound-ds",
+      "condition": "[not(parameters('dsLbPip'))]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerOutboundFrontEnd",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'dsoutboundlb')]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "outboundRules": [
+          {
+            "name": "OutboundRule1",
+            "properties": {
+              "frontendIPConfigurations": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-outbound-ds'),'/frontendIPConfigurations/LoadBalancerOutboundFrontEnd')]"
+                }
+              ],
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-outbound-ds'),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "loadBalancer-syslog",
+      "condition": "[parameters('deploySyslogReceivers')]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": ["[variables('syslogLbFrontEnd')]"],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "LBRule1",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-syslog'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-syslog'),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp",
+              "frontendPort": 514,
+              "backendPort": 514,
+              "enableFloatingIP": false,
+              "loadDistribution": "SourceIP",
+              "idleTimeoutInMinutes": 5,
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-syslog'),'/probes/tcpProbe')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "tcpProbe",
+            "properties": {
+              "protocol": "tcp",
+              "port": 514,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "loadBalancer-outbound-syslog",
+      "condition": "[and(parameters('deploySyslogReceivers'), not(parameters('syslogLbPip')))]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerOutboundFrontEnd",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'syslogoutboundlb')]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "outboundRules": [
+          {
+            "name": "OutboundRule1",
+            "properties": {
+              "frontendIPConfigurations": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-outbound-syslog'),'/frontendIPConfigurations/LoadBalancerOutboundFrontEnd')]"
+                }
+              ],
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-outbound-syslog'),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "loadBalancer-hec",
+      "type": "Microsoft.Network/loadBalancers",
+      "condition": "[parameters('deployHEC')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": ["[variables('hecLbFrontEnd')]"],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "LBRule1",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-hec'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-hec'),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp",
+              "frontendPort": 8088,
+              "backendPort": 8088,
+              "enableFloatingIP": false,
+              "loadDistribution": "SourceIP",
+              "idleTimeoutInMinutes": 5,
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-hec'),'/probes/tcpProbe')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "tcpProbe",
+            "properties": {
+              "protocol": "Https",
+              "port": 8088,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2,
+              "requestPath": "/services/collector/health/1.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "bastion",
+      "condition": "[parameters('deployBastion')]",
+      "type": "Microsoft.Network/bastionHosts",
+      "apiVersion": "2020-05-01",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', 'bastion')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "tags": {},
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig",
+            "properties": {
+              "subnet": {
+                "id": "[variables('bastionSubnetId')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'bastion')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "condition": "[parameters('deployBastion')]",
+      "apiVersion": "2020-05-01",
+      "name": "bastion",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "bastion"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-bastion-', variables('resgpguid'))]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "subscriptionId": {
+      "type": "string",
+      "value": "[subscription().subscriptionId]"
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    },
+    "appGwHost": {
+      "type": "string",
+      "value": "[reference('Microsoft.Network/publicIPAddresses/appg', '2020-05-01').dnsSettings.fqdn]"
+    },
+    "searchUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/publicIPAddresses/appg', '2020-05-01').dnsSettings.fqdn)]"
+    },
+    "monitorUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/publicIPAddresses/appg', '2020-05-01').dnsSettings.fqdn, ':8000')]"
+    },
+    "cmUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/publicIPAddresses/appg', '2020-05-01').dnsSettings.fqdn, ':8001')]"
+    },
+    "deploymentServerUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/publicIPAddresses/appg', '2020-05-01').dnsSettings.fqdn, ':8002')]"
+    },
+    "privateSearchUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/applicationGateways/splunk-appg', '2020-05-01').frontendIPConfigurations[1].properties.privateIPAddress, ':8080')]"
+    },
+    "privateMonitorUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/applicationGateways/splunk-appg', '2020-05-01').frontendIPConfigurations[1].properties.privateIPAddress, ':8003')]"
+    },
+    "privateCmUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/applicationGateways/splunk-appg', '2020-05-01').frontendIPConfigurations[1].properties.privateIPAddress, ':8004')]"
+    },
+    "privateDeploymentServerUrl": {
+      "type": "string",
+      "value": "[concat('http://', reference('Microsoft.Network/applicationGateways/splunk-appg', '2020-05-01').frontendIPConfigurations[1].properties.privateIPAddress, ':8005')]"
+    },
+    "numberOfIndexers": {
+      "type": "int",
+      "value": "[parameters('numberOfIndexers')]"
+    },
+    "vnetName": {
+      "type": "string",
+      "value": "[variables('vnetName')]"
+    }
+  }
+}

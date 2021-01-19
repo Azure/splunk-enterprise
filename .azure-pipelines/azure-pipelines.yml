@@ -1,0 +1,78 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - config
+    - scripts
+    - templates
+
+parameters:
+- name: images
+  type: object
+  default:
+  - ubuntu1804
+  - centos77
+  - rhel76payg
+
+variables:
+  ${{ if eq(variables['Build.Reason'], 'PullRequest') }}: 
+    branchName: $(System.PullRequest.SourceBranch)
+  ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+    branchName: $(Build.SourceBranchName)
+  
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: ValidateTemplate
+  jobs:
+  - job: 'ValidateTemplate'
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      name: ValidateTemplate
+      inputs:
+        deploymentScope: 'Resource Group'
+        azureResourceManagerConnection: '$(serviceConnection)'
+        subscriptionId: '$(subscriptionId)'
+        action: 'Create Or Update Resource Group'
+        resourceGroupName: '$(Build.SourceBranchName)'
+        location: '$(location)'
+        templateLocation: 'Linked artifact'
+        csmFile: '$(System.DefaultWorkingDirectory)/templates/azuredeploy.json'
+        overrideParameters: '-linuxSSHKey "$(linuxSSHKey)" -splunkPassword "$(splunkPassword)" -splunkPass4SymmKey "$(splunkPassword)" -splunkBlobUrl "$(splunkBlobUrl)" -splunkUfBlobUrl "$(splunkUfBlobUrl)" -licenseBlobUrl "$(licenseBlobUrl)" -vmPriority $(vmPriority) -downloadRoot "https://raw.githubusercontent.com/Azure/splunk-enterprise/$(branchName)" -syslogPip $(syslogPip) -syslogLbPip $(syslogLbPip)'
+        deploymentMode: 'Validation'
+
+- ${{ each image in parameters.images }}:
+  - stage: ${{image}}
+    dependsOn: ValidateTemplate
+    jobs:
+    - job: '${{image}}_test'
+      steps:
+      - task: AzureResourceManagerTemplateDeployment@3
+        name: BuildandTest${{image}}
+        inputs:
+          deploymentScope: 'Resource Group'
+          azureResourceManagerConnection: '$(serviceConnection)'
+          subscriptionId: '$(subscriptionId)'
+          action: 'Create Or Update Resource Group'
+          resourceGroupName: '$(Build.SourceBranchName)-${{image}}'
+          location: '$(location)'
+          templateLocation: 'Linked artifact'
+          csmFile: '$(System.DefaultWorkingDirectory)/templates/azuredeploy.json'
+          overrideParameters: '-linuxSSHKey "$(linuxSSHKey)" -splunkPassword "$(splunkPassword)" -splunkPass4SymmKey "$(splunkPassword)" -splunkBlobUrl "$(splunkBlobUrl)" -splunkUfBlobUrl "$(splunkUfBlobUrl)" -licenseBlobUrl "$(licenseBlobUrl)" -vmImage "${{ image }}" -vmPriority $(vmPriority) -downloadRoot "https://raw.githubusercontent.com/Azure/splunk-enterprise/$(branchName)" -syslogPip $(syslogPip) -syslogLbPip $(syslogLbPip)'
+          deploymentMode: 'Incremental'  
+    - job: '${{image}}_delete'
+      dependsOn: '${{image}}_test'
+      condition: eq(variables.deleteAfterBuild, true)
+      steps:
+      - task: AzureResourceManagerTemplateDeployment@3
+        inputs:
+          deploymentScope: 'Resource Group'
+          azureResourceManagerConnection: '$(serviceConnection)'
+          subscriptionId: '$(subscriptionId)'
+          action: 'DeleteRG'
+          resourceGroupName: '$(Build.SourceBranchName)-${{image}}'

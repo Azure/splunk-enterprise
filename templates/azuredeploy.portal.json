@@ -1,0 +1,1351 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [{}],
+    "steps": [
+      {
+        "name": "nwConfig",
+        "label": "Networking",
+        "elements": [
+          {
+            "name": "vnetConfig",
+            "type": "Microsoft.Network.VirtualNetworkCombo",
+            "label": {
+              "virtualNetwork": "Virtual network",
+              "subnets": "Subnets"
+            },
+            "toolTip": {
+              "virtualNetwork": "",
+              "subnets": ""
+            },
+            "defaultValue": {
+              "name": "splunk",
+              "addressPrefixSize": "/16"
+            },
+            "constraints": {
+              "minAddressPrefixSize": "/23"
+            },
+            "options": {
+              "hideExisting": true
+            },
+            "subnets": {
+              "subnet1": {
+                "label": "Indexer Subnet",
+                "defaultValue": {
+                  "name": "indexers",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/25",
+                  "requireContiguousAddresses": true
+                }
+              },
+              "subnet2": {
+                "label": "Search Subnet",
+                "defaultValue": {
+                  "name": "search",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/25",
+                  "requireContiguousAddresses": true
+                }
+              },
+              "subnet3": {
+                "label": "Management Subnet",
+                "defaultValue": {
+                  "name": "management",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/28",
+                  "requireContiguousAddresses": true
+                }
+              },
+              "subnet4": {
+                "label": "Forwarder Subnet",
+                "defaultValue": {
+                  "name": "forwarder",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/26",
+                  "requireContiguousAddresses": true
+                }
+              },
+              "subnet5": {
+                "label": "Azure Bastion Subnet",
+                "defaultValue": {
+                  "name": "AzureBastionSubnet",
+                  "addressPrefixSize": "/27"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/27",
+                  "requireContiguousAddresses": true
+                }
+              },
+              "subnet6": {
+                "label": "Azure Gateway Subnet",
+                "defaultValue": {
+                  "name": "ApplicationGatewaySubnet",
+                  "addressPrefixSize": "/28"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/28",
+                  "requireContiguousAddresses": true
+                }
+              }
+            },
+            "visible": true
+          },
+          {
+            "name": "deployBastion",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Azure Bastion service",
+            "defaultValue": "Yes",
+            "toolTip": "Deploy Azure Bastion for secure access to private Virtual Machines",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "splunkWebCidr",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Source CIDR block for Splunk UI",
+            "placeholder": "",
+            "defaultValue": "0.0.0.0/0",
+            "toolTip": "Source address range for access to Splunk web components including Monitoring Console, Search Heads and Cluster Master",
+            "constraints": {
+              "required": true,
+              "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+              "validationMessage": "Source prefix must be provided in valid CIDR notation e.g. 10.0.0.0/16"
+            },
+            "visible": true
+          },
+          {
+            "name": "webPublicAccessWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('nwConfig').splunkWebCidr, '0.0.0.0/0')]",
+            "options": {
+              "icon": "Warning",
+              "text": "This CIDR block allows web access from all public IP addresses. We recommend you apply a more specific source prefix for additional security."
+            }
+          },
+          {
+            "name": "splunkSSHCidr",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Source CIDR block for SSH to Splunk components",
+            "placeholder": "",
+            "defaultValue": "0.0.0.0/0",
+            "toolTip": "Source address range for SSH access to all Splunk components",
+            "constraints": {
+              "required": true,
+              "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+              "validationMessage": "Source prefix must be provided in valid CIDR notation e.g. 10.0.0.0/16"
+            },
+            "visible": true
+          },
+          {
+            "name": "sshPublicAccessWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('nwConfig').splunkWebCidr, '0.0.0.0/0')]",
+            "options": {
+              "icon": "Warning",
+              "text": "This CIDR block allows SSH access from all public IP addresses. We recommend you apply a more specific source prefix for additional security."
+            }
+          }
+        ]
+      },
+      {
+        "name": "osConfig",
+        "label": "General VM Settings",
+        "elements": [
+          {
+            "name": "vmImage",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Preferred Linux Distribution",
+            "placeholder": "",
+            "defaultValue": "Ubuntu 18.04 LTS",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Ubuntu 18.04 LTS",
+                  "value": "ubuntu1804"
+                },
+                {
+                  "label": "CentOS 7.7",
+                  "value": "centos77"
+                },
+                {
+                  "label": "RHEL 7.6 PAYG",
+                  "value": "rhel76payg"
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "vmUserName",
+            "type": "Microsoft.Compute.UserNameTextBox",
+            "label": "User name",
+            "defaultValue": "",
+            "toolTip": "",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9A-Z]{1,30}$",
+              "validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-30 characters long."
+            },
+            "osPlatform": "Linux",
+            "visible": true
+          },
+          {
+            "name": "vmSSHKey",
+            "type": "Microsoft.Compute.CredentialsCombo",
+            "label": {
+              "authenticationType": "Authentication type",
+              "password": "Password",
+              "confirmPassword": "Confirm password",
+              "sshPublicKey": "SSH public key"
+            },
+            "toolTip": {
+              "authenticationType": "",
+              "password": "",
+              "sshPublicKey": ""
+            },
+            "constraints": {
+              "required": true,
+              "customPasswordRegex": "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{12,}$",
+              "customValidationMessage": "The password must be alphanumeric, contain at least 12 characters, and have at least 1 letter and 1 number."
+            },
+            "options": {
+              "hideConfirmation": false,
+              "hidePassword": true
+            },
+            "osPlatform": "Linux",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "splunkConfig",
+        "label": "Splunk General",
+        "elements": [
+          {
+            "name": "splunkUser",
+            "type": "Microsoft.Compute.UserNameTextBox",
+            "label": "Splunk user name",
+            "defaultValue": "splunkadmin",
+            "toolTip": "User name to log in to Splunk Enterprise",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9A-Z]{1,30}$",
+              "validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-30 characters long."
+            },
+            "osPlatform": "Linux",
+            "visible": true
+          },
+          {
+            "name": "splunkPassword",
+            "type": "Microsoft.Common.PasswordBox",
+            "label": {
+              "password": "Splunk Password",
+              "confirmPassword": "Confirm Splunk password"
+            },
+            "toolTip": "Specify password to be used by Splunk",
+            "constraints": {
+              "required": true,
+              "regex": "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@!#$%?^{}~&+`¬:;_\\-=|<>\\\/\\[\\]£()*])(?=\\S+$).{8,}$",
+              "validationMessage": "Password must be at least 8 characters long, containing at least one of each of the following: upper case characters, lower case characters, numbers and special characters"
+            },
+            "options": {
+              "hideConfirmation": false
+            },
+            "visible": true
+          },
+          {
+            "name": "splunkPass4SymmKey",
+            "type": "Microsoft.Common.PasswordBox",
+            "label": {
+              "password": "Splunk pass4SymmKey",
+              "confirmPassword": "Confirm Splunk pass4SymmKey"
+            },
+            "toolTip": "Specify pass4SymmKey value to be used by Splunk",
+            "constraints": {
+              "required": true,
+              "regex": "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@!#$%?^{}~&+`¬:;_\\-=|<>\\\/\\[\\]£()*])(?=\\S+$).{8,}$",
+              "validationMessage": "Splunk pass4SymmKey must be at least 8 characters long, containing at least one of each of the following: upper case characters, lower case characters, numbers and special characters"
+            },
+            "options": {
+              "hideConfirmation": false
+            },
+            "visible": true
+          },
+          {
+            "name": "splunkLicenseFile",
+            "type": "Microsoft.Common.FileUpload",
+            "label": "Splunk License File",
+            "toolTip": "",
+            "constraints": {
+              "required": true,
+              "accept": ".license,.xml"
+            },
+            "options": {
+              "multiple": false,
+              "uploadMode": "file",
+              "openMode": "text",
+              "encoding": "UTF-8"
+            },
+            "visible": true
+          },
+          {
+            "name": "splunkInstallInputFormat",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Splunk Enterprise Installer Input Type",
+            "defaultValue": "URL",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "URL",
+                  "value": "url"
+                },
+                {
+                  "label": "File Upload",
+                  "value": "file"
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "splunkInstallerURL",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Splunk Enterprise Install URL",
+            "toolTip": "Enter a valid URL to download your Splunk license",
+            "constraints": {
+              "required": true,
+              "validations": [
+                {
+                  "regex": "^(www\\.|http:\\/\\/|https:\\/\\/)",
+                  "message": "Please enter a valid URL which starts with www., https:// or http://"
+                }
+              ]
+            },
+            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'url')]"
+          },
+          {
+            "name": "splunkInstallerFile",
+            "type": "Microsoft.Common.FileUpload",
+            "label": "Splunk Enterprise Install File",
+            "toolTip": "Splunk Enterprise Linux install (.tgz) file",
+            "constraints": {
+              "required": true,
+              "accept": ".tgz"
+            },
+            "options": {
+              "multiple": false,
+              "uploadMode": "file",
+              "openMode": "binary",
+              "encoding": "UTF-8"
+            },
+            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'file')]"
+          },
+          {
+            "name": "splunkInstallerInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'file')]",
+            "options": {
+              "icon": "Info",
+              "text": "Please wait until the Splunk Enterprise upload has completed before hitting Review + create. This can be checked in notifications."
+            }
+          },
+          {
+            "name": "licenseMasterSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "License Master Server Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D16ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D4ds_v4",
+                "Standard_D8ds_v4",
+                "Standard_D16ds_v4"
+              ],
+              "numAvailabilityZonesRequired": 1
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": 1,
+            "visible": true
+          },
+          {
+            "name": "licenseMasterSizeWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[or(equals(steps('splunkConfig').licenseMasterSize, 'Standard_D4ds_v4'), equals(steps('splunkConfig').licenseMasterSize, 'Standard_D8ds_v4'))]",
+            "options": {
+              "icon": "Warning",
+              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+            }
+          },
+          {
+            "name": "deploymentServerCount",
+            "type": "Microsoft.Common.Slider",
+            "min": 1,
+            "max": 10,
+            "label": "Number of Deployment Servers",
+            "subLabel": "Virtual Machines",
+            "defaultValue": 1,
+            "showStepMarkers": false,
+            "toolTip": "Select the number of Deployment Server VMs",
+            "constraints": {
+              "required": true
+            },
+            "visible": false
+          },
+          {
+            "name": "deploymentServerSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Deployment Server Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D16ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D4ds_v4",
+                "Standard_D8ds_v4",
+                "Standard_D16ds_v4"
+              ],
+              "numAvailabilityZonesRequired": 3
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": 1,
+            "visible": true
+          },
+          {
+            "name": "dsPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Deployment Server VM Public IPs",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP addresses to Deployment Server VM instance",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "dsLbPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Deployment Server Load Balancer Public IP",
+            "defaultValue": "No",
+            "toolTip": "The Deployment Server load balancer enables future scale-out of Deployment Server instances. This option allows you to attach a public IP to this component.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "deploymentServerSizeWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[or(equals(steps('splunkConfig').deploymentServerSize, 'Standard_D4ds_v4'), equals(steps('splunkConfig').deploymentServerSize, 'Standard_D8ds_v4'))]",
+            "options": {
+              "icon": "Warning",
+              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+            }
+          },
+          {
+            "name": "monitoringConsoleSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Monitoring Console VM Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D16ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D4ds_v4",
+                "Standard_D8ds_v4",
+                "Standard_D16ds_v4"
+              ]
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": 1,
+            "visible": true
+          },
+          {
+            "name": "monitoringConsoleSizeWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[or(equals(steps('splunkConfig').monitoringConsoleSize, 'Standard_D4ds_v4'), equals(steps('splunkConfig').monitoringConsoleSize, 'Standard_D8ds_v4'))]",
+            "options": {
+              "icon": "Warning",
+              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+            }
+          },
+          {
+            "name": "monitoringPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Monitoring Console VM Public IP",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP address to Monitoring Console VM instance",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "indexerConfig",
+        "label": "Indexer Configuration",
+        "elements": [
+          {
+            "name": "clusterMasterSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Cluster Master Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D16ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D4ds_v4",
+                "Standard_D8ds_v4",
+                "Standard_D16ds_v4",
+                "Standard_D32ds_v4"
+              ]
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": 1,
+            "visible": true
+          },
+          {
+            "name": "clusterMasterSizeWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[or(equals(steps('indexerConfig').clusterMasterSize, 'Standard_D4ds_v4'), equals(steps('indexerConfig').clusterMasterSize, 'Standard_D8ds_v4'))]",
+            "options": {
+              "icon": "Warning",
+              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+            }
+          },
+          {
+            "name": "indexerCount",
+            "type": "Microsoft.Common.Slider",
+            "min": 3,
+            "max": 100,
+            "label": "Number of Indexers",
+            "subLabel": "Virtual Machines",
+            "defaultValue": 3,
+            "showStepMarkers": false,
+            "toolTip": "Select the number of Indexer VMs in the cluster",
+            "constraints": {
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "indexerSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Indexer Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_L64s_v2", "Standard_D64ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_L16s_v2",
+                "Standard_L32s_v2",
+                "Standard_L64s_v2",
+                "Standard_L80s_v2",
+                "Standard_D16ds_v4",
+                "Standard_D32ds_v4",
+                "Standard_D64ds_v4"
+              ],
+              "numAvailabilityZonesRequired": 3
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": "[steps('indexerConfig').indexerCount]",
+            "visible": true
+          },
+          {
+            "name": "indexerInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[contains(steps('indexerConfig').indexerSize, '_L')]",
+            "options": {
+              "icon": "Info",
+              "text": "As you have selected a VM size from the Lv2 family the hot/warm volume will be configured to the combined size of the local NVMe disks for the chosen SKU.",
+              "uri": "https://docs.microsoft.com/en-us/azure/virtual-machines/lsv2-series"
+            }
+          },
+          {
+            "name": "hotDiskSize",
+            "type": "Microsoft.Common.Slider",
+            "min": 1024,
+            "max": 32768,
+            "label": "Hot/Warm Volume Size",
+            "subLabel": "TB",
+            "defaultValue": 1024,
+            "showStepMarkers": true,
+            "toolTip": "Select the volume size for hot/warm data",
+            "constraints": {
+              "required": true
+            },
+            "visible": "[contains(steps('indexerConfig').indexerSize, '_D')]"
+          },
+          {
+            "name": "coldStorageTier",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Cold Storage Type",
+            "placeholder": "",
+            "defaultValue": "Standard HDD",
+            "toolTip": "Storage tier for cold volume storage - Standard HDD, Standard SSD, Premium SSD",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Standard HDD",
+                  "value": "Standard_LRS"
+                },
+                {
+                  "label": "Standard SSD",
+                  "value": "StandardSSD_LRS"
+                },
+                {
+                  "label": "Premium SSD",
+                  "value": "Premium_LRS"
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "coldDiskSize",
+            "type": "Microsoft.Common.Slider",
+            "min": 1024,
+            "max": 32768,
+            "label": "Cold Volume Size",
+            "subLabel": "GB",
+            "defaultValue": 1024,
+            "showStepMarkers": true,
+            "toolTip": "Select the volume size for hot/warm data",
+            "constraints": {
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "indexerPipelines",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Number of indexing pipelines",
+            "defaultValue": "2",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "1",
+                  "value": 1
+                },
+                {
+                  "label": "2",
+                  "value": 2
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "replicationFactor",
+            "type": "Microsoft.Common.Slider",
+            "min": 1,
+            "max": 6,
+            "label": "Cluster-wide replication factor",
+            "defaultValue": 3,
+            "showStepMarkers": true,
+            "toolTip": "Select the number of copies of each bucket across the cluster",
+            "constraints": {
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "searchFactor",
+            "type": "Microsoft.Common.Slider",
+            "min": 1,
+            "max": 6,
+            "label": "Cluster-wide search factor",
+            "defaultValue": 2,
+            "showStepMarkers": true,
+            "toolTip": "Select the number of searchable copies of each bucket across the cluster",
+            "constraints": {
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "indexerPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Indexer VM Public IPs",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP addresses to Indexer VM instances",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "deployHEC",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Configure HTTP Event Collection on Indexers",
+            "defaultValue": "No",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "HECPublicIp",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Use Public IP for HTTP Event Collection",
+            "defaultValue": "No",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": "[steps('indexerConfig').deployHEC]"
+          },
+          {
+            "name": "splunkHecCidr",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Source CIDR block for HEC access",
+            "placeholder": "",
+            "defaultValue": "0.0.0.0/0",
+            "toolTip": "Source address range for access to HTTP Event Collector port",
+            "constraints": {
+              "required": true,
+              "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+              "validationMessage": "Source prefix must be provided in valid CIDR notation e.g. 10.0.0.0/16"
+            },
+            "visible": "[steps('indexerConfig').deployHEC]"
+          },
+          {
+            "name": "hecPublicAccessWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('indexerConfig').splunkHecCidr, '0.0.0.0/0')]",
+            "options": {
+              "icon": "Warning",
+              "text": "This CIDR block allows HEC access from all public IP addresses. We recommend you apply a more specific source prefix for additional security."
+            }
+          }
+        ]
+      },
+      {
+        "name": "shConfig",
+        "label": "Search Head Configuration",
+        "elements": [
+          {
+            "name": "shCount",
+            "type": "Microsoft.Common.Slider",
+            "min": 3,
+            "max": 75,
+            "label": "Number of Search Heads",
+            "subLabel": "Virtual Machines",
+            "defaultValue": 3,
+            "showStepMarkers": false,
+            "toolTip": "Select the number of Search Heads in the cluster",
+            "constraints": {
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "shSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Search Head Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D64ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D16ds_v4",
+                "Standard_D32ds_v4",
+                "Standard_D64ds_v4"
+              ],
+              "numAvailabilityZonesRequired": 3
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": "[steps('shConfig').shCount]",
+            "visible": true
+          },
+          {
+            "name": "shPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Search Head VM Public IPs",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP addresses to Search Head VM instances",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "shDeployerSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Search Head Deployer Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D16ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D4ds_v4",
+                "Standard_D8ds_v4",
+                "Standard_D16ds_v4"
+              ]
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": 1,
+            "visible": true
+          },
+          {
+            "name": "shDeployerSizeWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[or(equals(steps('shConfig').shDeployerSize, 'Standard_D4ds_v4'), equals(steps('shConfig').shDeployerSize, 'Standard_D8ds_v4'))]",
+            "options": {
+              "icon": "Warning",
+              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+            }
+          },
+          {
+            "name": "shdPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Search Head Deployer VM Public IP",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP address to Search Head Deployer VM instance",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "forwarderConfig",
+        "label": "Forwarder Configuration",
+        "elements": [
+          {
+            "name": "deployHeavyForwarders",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Heavy Forwarders",
+            "defaultValue": "No",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "heavyForwarderCount",
+            "type": "Microsoft.Common.Slider",
+            "min": 3,
+            "max": 50,
+            "label": "Number of Heavy Forwarders",
+            "subLabel": "Virtual Machines",
+            "defaultValue": 3,
+            "showStepMarkers": false,
+            "toolTip": "Select the number of Heavy Forwarder VMs",
+            "constraints": {
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deployHeavyForwarders]"
+          },
+          {
+            "name": "heavyForwarderSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Heavy Forwarder Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D8ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D4ds_v4",
+                "Standard_D8ds_v4",
+                "Standard_D16ds_v4"
+              ],
+              "numAvailabilityZonesRequired": 3
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": "[steps('forwarderConfig').heavyForwarderCount]",
+            "visible": "[steps('forwarderConfig').deployHeavyForwarders]"
+          },
+          {
+            "name": "hfPipelines",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Number of pipelines per Heavy Forwarder",
+            "defaultValue": "2",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "1",
+                  "value": 1
+                },
+                {
+                  "label": "2",
+                  "value": 2
+                }
+              ],
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deployHeavyForwarders]"
+          },
+          {
+            "name": "hfPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Heavy Forwarder VM Public IPs",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP addresses to Heavy Forwarder VM instances",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deployHeavyForwarders]"
+          },
+          {
+            "name": "deploySyslogReceivers",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Syslog Receivers",
+            "defaultValue": "No",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "syslogReceiverCount",
+            "type": "Microsoft.Common.Slider",
+            "min": 3,
+            "max": 50,
+            "label": "Number of Syslog Receivers",
+            "subLabel": "Virtual Machines",
+            "defaultValue": 3,
+            "showStepMarkers": false,
+            "toolTip": "Select the number of Syslog Receiver VMs",
+            "constraints": {
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
+          },
+          {
+            "name": "syslogReceiverSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Syslog Receiver Size",
+            "toolTip": "",
+            "recommendedSizes": ["Standard_D8ds_v4"],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_D4ds_v4",
+                "Standard_D8ds_v4",
+                "Standard_D16ds_v4"
+              ],
+              "numAvailabilityZonesRequired": 3
+            },
+            "options": {
+              "hideDiskTypeFilter": true
+            },
+            "osPlatform": "Linux",
+            "imageReference": {
+              "publisher": "Canonical",
+              "offer": "UbuntuServer",
+              "sku": "18.04-LTS"
+            },
+            "count": "[steps('forwarderConfig').syslogReceiverCount]",
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
+          },
+          {
+            "name": "syslogCidr",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Source CIDR block for Syslog forwarding",
+            "placeholder": "",
+            "defaultValue": "0.0.0.0/0",
+            "toolTip": "Source address range for access to Syslog Receiver port",
+            "constraints": {
+              "required": true,
+              "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+              "validationMessage": "Source prefix must be provided in valid CIDR notation e.g. 10.0.0.0/16"
+            },
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
+          },
+          {
+            "name": "syslogPublicAccessWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('forwarderConfig').syslogCidr, '0.0.0.0/0')]",
+            "options": {
+              "icon": "Warning",
+              "text": "This CIDR block allows Syslog forwarding from all public IP addresses. We recommend you apply a more specific source prefix for additional security."
+            }
+          },
+          {
+            "name": "syslogPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Syslog Receiver VMs with Public IPs",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP addresses to Syslog Receiver VM instances",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
+          },
+          {
+            "name": "syslogLbPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Syslog Receiver Load Balancer with Public IP",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP address to Syslog Receiver Load Balancer",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
+          },
+          {
+            "name": "splunkInstallUfInputFormat",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Splunk Universal Forwarder Installer Input Type",
+            "defaultValue": "URL",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "URL",
+                  "value": "url"
+                },
+                {
+                  "label": "File Upload",
+                  "value": "file"
+                }
+              ],
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
+          },
+          {
+            "name": "splunkInstallerUfURL",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Splunk Universal Forwarder Install URL",
+            "toolTip": "Enter a valid URL to download your Splunk license",
+            "constraints": {
+              "required": true,
+              "validations": [
+                {
+                  "regex": "^(www\\.|http:\\/\\/|https:\\/\\/)",
+                  "message": "Please enter a valid URL which starts with www., https:// or http://"
+                }
+              ]
+            },
+            "visible": "[and(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'url'), steps('forwarderConfig').deploySyslogReceivers)]"
+          },
+          {
+            "name": "splunkInstallerUfFile",
+            "type": "Microsoft.Common.FileUpload",
+            "label": "Splunk Universal Forwarder Install File",
+            "toolTip": "Splunk Enterprise Linux install (.tgz) file",
+            "constraints": {
+              "required": true,
+              "accept": ".tgz"
+            },
+            "options": {
+              "multiple": false,
+              "uploadMode": "file",
+              "openMode": "binary",
+              "encoding": "UTF-8"
+            },
+            "visible": "[and(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'file'), steps('forwarderConfig').deploySyslogReceivers)]"
+          },
+          {
+            "name": "splunkInstallerUfInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[and(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'file'), steps('forwarderConfig').deploySyslogReceivers)]",
+            "options": {
+              "icon": "Info",
+              "text": "Please wait until the Splunk Universal Forwarder upload has completed before hitting Review + create. This can be checked in notifications."
+            }
+          }
+        ]
+      },
+      {
+        "name": "tags",
+        "label": "Tags",
+        "elements": [
+          {
+            "name": "tagsByResource",
+            "type": "Microsoft.Common.TagsByResource",
+            "resources": [
+              "Microsoft.Storage/storageAccounts",
+              "Microsoft.Compute/virtualMachines"
+            ]
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "linuxUserName": "[steps('osConfig').vmUserName]",
+      "vmImage": "[steps('osConfig').vmImage]",
+      "linuxSSHKey": "[steps('osConfig').vmSSHKey.sshPublicKey]",
+      "numberOfIndexers": "[steps('indexerConfig').indexerCount]",
+      "indexerSku": "[steps('indexerConfig').indexerSize]",
+      "indexerPipelines": "[steps('indexerConfig').indexerPipelines]",
+      "numberOfSearchHeads": "[steps('shConfig').shCount]",
+      "searchHeadSku": "[steps('shConfig').shSize]",
+      "location": "[location()]",
+      "tagsByResource": "[steps('tags').tagsByResource]",
+      "splunkBlobUrl": "[if(equals(steps('splunkConfig').splunkInstallInputFormat, 'url'), steps('splunkConfig').splunkInstallerURL, steps('splunkConfig').splunkInstallerFile)]",
+      "splunkUfBlobUrl": "[if(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'url'), steps('forwarderConfig').splunkInstallerUfURL, steps('forwarderConfig').splunkInstallerUfFile)]",
+      "virtualNetworkAddressPrefix": "[steps('nwConfig').vnetConfig.addressPrefixes]",
+      "indexerSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet1.addressPrefix]",
+      "searchSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet2.addressPrefix]",
+      "managementSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet3.addressPrefix]",
+      "forwarderSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet4.addressPrefix]",
+      "bastionSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet5.addressPrefix]",
+      "appGSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet6.addressPrefix]",
+      "hotDiskSize": "[steps('indexerConfig').hotDiskSize]",
+      "coldDiskSize": "[steps('indexerConfig').coldDiskSize]",
+      "deployHeavyForwarders": "[steps('forwarderConfig').deployHeavyForwarders]",
+      "hfPip": "[steps('forwarderConfig').hfPip]",
+      "dsPip": "[steps('splunkConfig').dsPip]",
+      "dsLbPip": "[steps('splunkConfig').dsLbPip]",
+      "shdPip": "[steps('shConfig').shdPip]",
+      "shPip": "[steps('shConfig').shPip]",
+      "indexerPip": "[steps('indexerConfig').indexerPip]",
+      "monitoringPip": "[steps('splunkConfig').monitoringPip]",
+      "deployHEC": "[steps('indexerConfig').deployHEC]",
+      "HECPublicIp": "[steps('indexerConfig').HECPublicIp]",
+      "numberOfForwarders": "[steps('forwarderConfig').heavyForwarderCount]",
+      "hfSku": "[steps('forwarderConfig').heavyForwarderSize]",
+      "hfPipelines": "[steps('forwarderConfig').hfPipelines]",
+      "licenseBlobUrl": "[steps('splunkConfig').splunkLicenseFile]",
+      "licenseMasterSku": "[steps('splunkConfig').licenseMasterSize]",
+      "monitoringConsoleSku": "[steps('splunkConfig').monitoringConsoleSize]",
+      "cmSku": "[steps('indexerConfig').clusterMasterSize]",
+      "numberOfDeploymentServers": "[steps('splunkConfig').deploymentServerCount]",
+      "deploymentServerSku": "[steps('splunkConfig').deploymentServerSize]",
+      "shdSku": "[steps('shConfig').shDeployerSize]",
+      "replicationFactor": "[steps('indexerConfig').replicationFactor]",
+      "searchFactor": "[steps('indexerConfig').searchFactor]",
+      "splunkWebCidr": "[steps('nwConfig').splunkWebCidr]",
+      "splunkSSHCidr": "[steps('nwConfig').splunkSSHCidr]",
+      "splunkUser": "[steps('splunkConfig').splunkUser]",
+      "splunkPassword": "[steps('splunkConfig').splunkPassword]",
+      "splunkPass4SymmKey": "[steps('splunkConfig').splunkPass4SymmKey]",
+      "splunkHecCidr": "[steps('indexerConfig').splunkHecCidr]",
+      "coldStorageTier": "[steps('indexerConfig').coldStorageTier]",
+      "deploySyslogReceivers": "[steps('forwarderConfig').deploySyslogReceivers]",
+      "numberOfSyslogReceivers": "[steps('forwarderConfig').syslogReceiverCount]",
+      "syslogSku": "[steps('forwarderConfig').syslogReceiverSize]",
+      "syslogCidr": "[steps('forwarderConfig').syslogCidr]",
+      "syslogPip": "[steps('forwarderConfig').syslogPip]",
+      "syslogLbPip": "[steps('forwarderConfig').syslogLbPip]"
+    }
+  }
+}
