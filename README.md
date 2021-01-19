@@ -1,4 +1,4 @@
-![Build Status](https://dev.azure.com/AZGlobal/Azure%20Global%20CAT%20Engineering/_apis/build/status/Azure.splunk-enterprise?branchName=pipeline)
+![Build Status](https://dev.azure.com/AZGlobal/Azure%20Global%20CAT%20Engineering/_apis/build/status/Azure.splunk-enterprise?branchName=main)
 
 # Introduction 
 This documentation provides detailed guidance to support the deployment of Splunk Enterprise on Azure in line with [Splunk Validated Architectures](https://www.splunk.com/pdfs/technical-briefs/splunk-validated-architectures.pdf) and the following key priorities:
