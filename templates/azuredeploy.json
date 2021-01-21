@@ -1278,7 +1278,7 @@
                   "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'splunk-appg'), '/backendAddressPools/clusterMasterBackendPool')]"
                 }
               ],
-              "publicIPAddress": "[if(parameters('monitoringPip'), variables('clusterMasterPipId'), json('null'))]",
+              "publicIPAddress": "[if(parameters('clusterMasterPip'), variables('clusterMasterPipId'), json('null'))]",
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
                 "id": "[variables('managementSubnetId')]"
