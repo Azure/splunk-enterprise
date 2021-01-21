@@ -1389,7 +1389,8 @@
       "syslogSku": "[steps('forwarderConfig').syslogReceiverSize]",
       "syslogCidr": "[steps('forwarderConfig').syslogCidr]",
       "syslogPip": "[steps('forwarderConfig').syslogPip]",
-      "syslogLbPip": "[steps('forwarderConfig').syslogLbPip]"
+      "syslogLbPip": "[steps('forwarderConfig').syslogLbPip]",
+      "deployBastion": "[steps('nwConfig').deployBastion]"
     }
   }
 }
