@@ -412,6 +412,27 @@
             }
           },
           {
+            "name": "licenseMasterPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision License Master VM Public IP",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP address to License Master VM instance",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
             "name": "deploymentServerCount",
             "type": "Microsoft.Common.Slider",
             "min": 1,
@@ -601,6 +622,27 @@
               "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
               "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
             }
+          },
+          {
+            "name": "clusterMasterPip",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Provision Cluster Master VM Public IP",
+            "defaultValue": "No",
+            "toolTip": "Attach public IP address to Cluster Master VM instance",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
           },
           {
             "name": "indexerCount",
@@ -1317,6 +1359,8 @@
       "dsLbPip": "[steps('splunkConfig').dsLbPip]",
       "shdPip": "[steps('shConfig').shdPip]",
       "shPip": "[steps('shConfig').shPip]",
+      "cmPip": "[steps('indexerConfig').cmPip]",
+      "licenseMasterPip": "[steps('splunkConfig').licenseMasterPip]",
       "indexerPip": "[steps('indexerConfig').indexerPip]",
       "monitoringPip": "[steps('splunkConfig').monitoringPip]",
       "deployHEC": "[steps('indexerConfig').deployHEC]",
