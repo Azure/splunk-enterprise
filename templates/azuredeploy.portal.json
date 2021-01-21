@@ -1359,7 +1359,7 @@
       "dsLbPip": "[steps('splunkConfig').dsLbPip]",
       "shdPip": "[steps('shConfig').shdPip]",
       "shPip": "[steps('shConfig').shPip]",
-      "cmPip": "[steps('indexerConfig').cmPip]",
+      "clusterMasterPip": "[steps('indexerConfig').clusterMasterPip]",
       "licenseMasterPip": "[steps('splunkConfig').licenseMasterPip]",
       "indexerPip": "[steps('indexerConfig').indexerPip]",
       "monitoringPip": "[steps('splunkConfig').monitoringPip]",
