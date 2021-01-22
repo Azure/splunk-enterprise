@@ -213,7 +213,7 @@ If the Ls_v2 VM family are used as Indexers, the local NVMe disks are used as th
 
 * Ensure that the selected region has a minimum of 3 Availability Zones.
 * Ensure that the VM core quotas on the subscription are sufficient for the family and quantity of VMs you plan to deploy.
-* Ensure the Splunk installer .tgz file for the planned version of Splunk Enterprise is available, either as a publicly accessible URL or downloaded locally. Note that the Splunk Enterprise on Azure reference implementation has been tested and is fully compatible with Splunk versions, 7.3, 8.0, 8.1 (other versions may be compatible but this has not been tested and confirmed).
+* Ensure the Splunk installer .tgz file for the planned version of Splunk Enterprise is available as a publicly accessible URL. Note that the Splunk Enterprise on Azure reference implementation has been tested and is fully compatible with Splunk versions, 7.3, 8.0, 8.1 (other versions may be compatible but this has not been tested and confirmed).
 * Ensure that a valid Splunk license file for the required daily ingest volume is available.
 
 ## Deployment Steps
@@ -260,8 +260,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Splunk Password | no default | The password used for the initial Splunk admin user. This should contain at least one number, upper case and lower case letter and symbol |
 | Splunk pass4SymmKey | no default | The pass4SymmKey used when configuring Splunk clustering. This should contain at least one number, upper case and lower case letter and symbol |
 | Splunk license file | no default | The Splunk license to be installed on the License Master |
-| Splunk Enterprise Installer Input Type | URL | The format to provide the Splunk installer, options are URL or file upload |
-| Splunk Enterprise Install URL/File | no default | Upload or provide a URL for your chosen Splunk version from [splunk.com](splunk.com). This should be in .tgz format |
+| Splunk Enterprise Installer URL | no default | Provide a URL for your chosen Splunk Enterprise version from [splunk.com](splunk.com). This should be in .tgz format |
 | License Master Server Size | D16s v3 | The VM SKU for the License Master |
 | Deployment Server Size | D16s v3 | The VM SKU for Deployment Server |
 | Provision Deployment Server VM Public IP | No | Whether to deploy Deployment Server VM with a Public IP |
@@ -306,6 +305,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Source CIDR block for Syslog forwarding | 0.0.0.0/0 | Source IPs to allow for syslog forwarding to the Syslog Receiver VMs |
 | Provision Syslog Receiver VMs with Public IP | No | Whether to deploy Syslog Receiver VMs with Public IPs |
 | Provision Syslog Receiver Load Balancer with Public IP | No | Whether to deploy Syslog Receiver Load Balancer with a Public IP |
+| Splunk Universal Forwarder Installer URL | no default | Provide a URL for your chosen Splunk Universal Forwarder version from [splunk.com](splunk.com). This should be in .tgz format |
 
 ### Tags
 | Option Name | Default | Description |
