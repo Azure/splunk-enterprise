@@ -1274,7 +1274,7 @@
       "numberOfForwarders": "[steps('forwarderConfig').heavyForwarderCount]",
       "hfSku": "[steps('forwarderConfig').heavyForwarderSize]",
       "hfPipelines": "[steps('forwarderConfig').hfPipelines]",
-      "licenseBlobUrl": "[steps('splunkConfig').splunkLicenseFile]",
+      "licenseFile": "[steps('splunkConfig').splunkLicenseFile]",
       "licenseMasterSku": "[steps('splunkConfig').licenseMasterSize]",
       "monitoringConsoleSku": "[steps('splunkConfig').monitoringConsoleSize]",
       "cmSku": "[steps('indexerConfig').clusterMasterSize]",
