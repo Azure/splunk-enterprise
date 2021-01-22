@@ -306,7 +306,7 @@
             },
             "options": {
               "multiple": false,
-              "uploadMode": "file",
+              "uploadMode": "url",
               "openMode": "text",
               "encoding": "UTF-8"
             },
