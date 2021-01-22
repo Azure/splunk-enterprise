@@ -152,10 +152,10 @@
         "description": "URL for Splunk UF .tgz file"
       }
     },
-    "licenseBlobUrl": {
+    "licenseFile": {
       "type": "string",
       "metadata": {
-        "description": "URL for Splunk Enterprise license file"
+        "description": "Splunk Enterprise license file"
       }
     },
     "hotDiskSize": {
@@ -1729,7 +1729,7 @@
               "fileUris": ["[variables('installScriptPath')]"]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/licensemaster', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-url \"', parameters('licenseBlobUrl'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/licensemaster', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-file \"', parameters('licenseFile'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
             }
           }
         }
