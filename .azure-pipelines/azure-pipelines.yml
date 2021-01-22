@@ -43,7 +43,7 @@ stages:
         location: '$(location)'
         templateLocation: 'Linked artifact'
         csmFile: '$(System.DefaultWorkingDirectory)/templates/azuredeploy.json'
-        overrideParameters: '-linuxSSHKey "$(linuxSSHKey)" -splunkPassword "$(splunkPassword)" -splunkPass4SymmKey "$(splunkPassword)" -splunkBlobUrl "$(splunkBlobUrl)" -splunkUfBlobUrl "$(splunkUfBlobUrl)" -licenseBlobUrl "$(licenseBlobUrl)" -vmPriority $(vmPriority) -downloadRoot "https://raw.githubusercontent.com/Azure/splunk-enterprise/$(branchName)" -syslogPip $(syslogPip) -syslogLbPip $(syslogLbPip)'
+        overrideParameters: '-linuxSSHKey "$(linuxSSHKey)" -splunkPassword "$(splunkPassword)" -splunkPass4SymmKey "$(splunkPassword)" -splunkBlobUrl "$(splunkBlobUrl)" -splunkUfBlobUrl "$(splunkUfBlobUrl)" -licenseFile "$(licenseFile)" -vmPriority $(vmPriority) -downloadRoot "https://raw.githubusercontent.com/Azure/splunk-enterprise/$(branchName)" -syslogPip $(syslogPip) -syslogLbPip $(syslogLbPip)'
         deploymentMode: 'Validation'
 
 - ${{ each image in parameters.images }}:
@@ -63,7 +63,7 @@ stages:
           location: '$(location)'
           templateLocation: 'Linked artifact'
           csmFile: '$(System.DefaultWorkingDirectory)/templates/azuredeploy.json'
-          overrideParameters: '-linuxSSHKey "$(linuxSSHKey)" -splunkPassword "$(splunkPassword)" -splunkPass4SymmKey "$(splunkPassword)" -splunkBlobUrl "$(splunkBlobUrl)" -splunkUfBlobUrl "$(splunkUfBlobUrl)" -licenseBlobUrl "$(licenseBlobUrl)" -vmImage "${{ image }}" -vmPriority $(vmPriority) -downloadRoot "https://raw.githubusercontent.com/Azure/splunk-enterprise/$(branchName)" -syslogPip $(syslogPip) -syslogLbPip $(syslogLbPip)'
+          overrideParameters: '-linuxSSHKey "$(linuxSSHKey)" -splunkPassword "$(splunkPassword)" -splunkPass4SymmKey "$(splunkPassword)" -splunkBlobUrl "$(splunkBlobUrl)" -splunkUfBlobUrl "$(splunkUfBlobUrl)" -licenseFile "$(licenseFile)" -vmImage "${{ image }}" -vmPriority $(vmPriority) -downloadRoot "https://raw.githubusercontent.com/Azure/splunk-enterprise/$(branchName)" -syslogPip $(syslogPip) -syslogLbPip $(syslogLbPip)'
           deploymentMode: 'Incremental'  
     - job: '${{image}}_delete'
       dependsOn: '${{image}}_test'
