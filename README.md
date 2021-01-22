@@ -152,7 +152,7 @@ This subnet separation allows Network Security Groups to be implemented to restr
 
 The high level network architecture and traffic flows are illustrated below.
 
-![](SplunkDataFlows.png)
+![](https://github.com/Azure/splunk-enterprise/raw/main/SplunkDataFlows.png)
 
 ### Public Access
 It is strongly recommended to implement Splunk Enterprise on Azure with private IPs only, except where access is required over public networks such as end user access to Search Heads or external services sending data via the HTTP Event Collector.  Where public access is required this should be via appropriate ingress or load balancing solutions for security and high availability purposes, for example:
