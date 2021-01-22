@@ -27,6 +27,7 @@ This documentation provides detailed guidance to support the deployment of Splun
     - [Public Access](#public-access)
     - [Azure Bastion](#azure-bastion)
     - [Private Connectivity Considerations](#private-connectivity-considerations)
+    - [Outbound Connectivity](#outbound-connectivity)
     - [DNS Resolution](#dns-resolution)
 - [High Availability & Disaster Recovery](#high-availability--disaster-recovery)
 - [Infrastructure Sizing](#infrastructure-sizing)
@@ -151,7 +152,7 @@ This subnet separation allows Network Security Groups to be implemented to restr
 
 The high level network architecture and traffic flows are illustrated below.
 
-![](SplunkDataFlows.png)
+![](https://github.com/Azure/splunk-enterprise/raw/main/SplunkDataFlows.png)
 
 ### Public Access
 It is strongly recommended to implement Splunk Enterprise on Azure with private IPs only, except where access is required over public networks such as end user access to Search Heads or external services sending data via the HTTP Event Collector.  Where public access is required this should be via appropriate ingress or load balancing solutions for security and high availability purposes, for example:
@@ -180,6 +181,9 @@ If there is a requirement to send data from on premises to Splunk Enterprise in 
 A common pattern to achieve this connectivity is a hub-spoke network topology, please see [Azure hub-spoke reference architecture](https://docs.microsoft.com/en-us/azure/architecture/reference-architectures/hybrid-networking/hub-spoke) for more information.  A generic illustration of this architecture, not including Splunk Enterprise components, is shown below.
 
 ![](https://docs.microsoft.com/en-us/azure/architecture/reference-architectures/hybrid-networking/images/hub-spoke.png "Azure hub-spoke architecture")
+
+### Outbound Connectivity
+One implication of using internal load balancers for the Indexers (HEC), Deployment Server and Syslog Receivers is that outbound access via the Load Balancer will not be possible. Outbound access is required for installing and configuring Splunk (and syslog-ng in the case of the Syslog Receivers). Because of this, the Splunk Enterprise on Azure reference implementation will deploy a separate external Load Balancer to enable outbound access for the Indexers, Deployment Server and Syslog Receiver VMs if an internal Load Balancer is selected for access. This is in line with [Azure best practises](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-faqs#what-are-best-practises-with-respect-to-outbound-connectivity).
 
 ### DNS Resolution
 All Splunk VMs should be resolvable via DNS to simplify service to service communication without any dependency on IP addresses. This also offers the flexibility to replace components configured with DNS host names without reconfiguring Splunk.  DNS can also be used for [load balancing](https://docs.splunk.com/Documentation/Forwarder/8.0.5/Forwarder/Configureloadbalancing#Specify_a_DNS_list_target) connections to Indexers from Universal Forwarders or Heavy Forwarders.
@@ -226,6 +230,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 </a>
 
 ### Basics
+
 | Option Name | Default | Description |
 |--|--|--|
 | Subscription | no default  | Azure subscription for deployment |
@@ -233,6 +238,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Region | East US | Azure region to deploy to |
 
 ### Networking
+
 | Option Name | Default | Description |
 |--|--|--|
 | Virtual Network | splunk (10.1.0.0/16) | The name, size and address space for the virtual network that will be created for Splunk resources. This should be at least a /23 size network |
@@ -247,6 +253,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Source CIDR block for SSH access to VMs | 0.0.0.0/0 | Source IPs to allow for SSH access to the VMs |
 
 ### General VM Settings
+
 | Option Name | Default | Description |
 |--|--|--|
 | Preferred Linux Distribution | Ubuntu 18.04 LTS | The Linux distribution that VMs will be deployed with. Supported distributions are Ubuntu 18.04, CentOS 7.7, RHEL 7.6 PAYG (which can be switched to BYOS after deployment, please follow these [instructions](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/azure-hybrid-benefit-linux#enable-and-disable-the-benefit-in-the-azure-cli)) |
@@ -254,6 +261,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | SSH Public Key | no default | SSH public key for access to VMs |
 
 ### Splunk General
+
 | Option Name | Default | Description |
 |--|--|--|
 | Splunk user name | splunkadmin | The username used for the initial Splunk admin user |
@@ -269,6 +277,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Provision Monitoring Console VM Public IP | No | Whether to deploy Monitoring Console VM with a Public IP |
 
 ### Indexer Configuration
+
 | Option Name | Default | Description |
 |--|--|--|
 | Cluster Master Size | D16s v3 | The VM SKU for the Cluster Master |
@@ -283,6 +292,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Use Public IP for HTTP Event Collection | No | Whether to deploy the HTTP Event Collection Load Balancer with a Public IP |
 
 ### Search Head Configuration
+
 | Option Name | Default | Description |
 |--|--|--|
 | Number of Search Heads | 3 | Number of Search Heads to be deployed in the Search Head cluster |
@@ -292,6 +302,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Provision Search Head Deployer VM Public IP | No | Whether to deploy Search Head Deployer VM with a Public IP |
 
 ### Forwarder Configuration
+
 | Option Name | Default | Description |
 |--|--|--|
 | Provision Heavy Forwarders | No | Whether to deploy Heavy Forwarders |
@@ -308,9 +319,9 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Splunk Universal Forwarder Installer URL | no default | Provide a URL for your chosen Splunk Universal Forwarder version from [splunk.com](splunk.com). This should be in .tgz format |
 
 ### Tags
+
 | Option Name | Default | Description |
 |--|--|--|
 | Name | no default | Tag name |
 | Value | no default | Tag value |
 | Resource | Select all | Which resources to apply the tag to |
-
