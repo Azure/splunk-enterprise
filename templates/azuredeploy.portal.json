@@ -306,30 +306,9 @@
             },
             "options": {
               "multiple": false,
-              "uploadMode": "url",
-              "openMode": "text",
+              "uploadMode": "file",
+              "openMode": "binary",
               "encoding": "UTF-8"
-            },
-            "visible": true
-          },
-          {
-            "name": "splunkInstallInputFormat",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Splunk Enterprise Installer Input Type",
-            "defaultValue": "URL",
-            "toolTip": "",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "URL",
-                  "value": "url"
-                },
-                {
-                  "label": "File Upload",
-                  "value": "file"
-                }
-              ],
-              "required": true
             },
             "visible": true
           },
@@ -337,7 +316,7 @@
             "name": "splunkInstallerURL",
             "type": "Microsoft.Common.TextBox",
             "label": "Splunk Enterprise Install URL",
-            "toolTip": "Enter a valid URL to download your Splunk license",
+            "toolTip": "Enter a valid publicly accessible URL to download your Splunk install file (.tgz archive)",
             "constraints": {
               "required": true,
               "validations": [
@@ -347,33 +326,7 @@
                 }
               ]
             },
-            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'url')]"
-          },
-          {
-            "name": "splunkInstallerFile",
-            "type": "Microsoft.Common.FileUpload",
-            "label": "Splunk Enterprise Install File",
-            "toolTip": "Splunk Enterprise Linux install (.tgz) file",
-            "constraints": {
-              "required": true,
-              "accept": ".tgz"
-            },
-            "options": {
-              "multiple": false,
-              "uploadMode": "file",
-              "openMode": "binary",
-              "encoding": "UTF-8"
-            },
-            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'file')]"
-          },
-          {
-            "name": "splunkInstallerInfo",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'file')]",
-            "options": {
-              "icon": "Info",
-              "text": "Please wait until the Splunk Enterprise upload has completed before hitting Review + create. This can be checked in notifications."
-            }
+            "visible": true
           },
           {
             "name": "licenseMasterSize",
@@ -1252,27 +1205,6 @@
             "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
           },
           {
-            "name": "splunkInstallUfInputFormat",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Splunk Universal Forwarder Installer Input Type",
-            "defaultValue": "URL",
-            "toolTip": "",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "URL",
-                  "value": "url"
-                },
-                {
-                  "label": "File Upload",
-                  "value": "file"
-                }
-              ],
-              "required": true
-            },
-            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
-          },
-          {
             "name": "splunkInstallerUfURL",
             "type": "Microsoft.Common.TextBox",
             "label": "Splunk Universal Forwarder Install URL",
@@ -1286,33 +1218,7 @@
                 }
               ]
             },
-            "visible": "[and(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'url'), steps('forwarderConfig').deploySyslogReceivers)]"
-          },
-          {
-            "name": "splunkInstallerUfFile",
-            "type": "Microsoft.Common.FileUpload",
-            "label": "Splunk Universal Forwarder Install File",
-            "toolTip": "Splunk Enterprise Linux install (.tgz) file",
-            "constraints": {
-              "required": true,
-              "accept": ".tgz"
-            },
-            "options": {
-              "multiple": false,
-              "uploadMode": "file",
-              "openMode": "binary",
-              "encoding": "UTF-8"
-            },
-            "visible": "[and(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'file'), steps('forwarderConfig').deploySyslogReceivers)]"
-          },
-          {
-            "name": "splunkInstallerUfInfo",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'file'), steps('forwarderConfig').deploySyslogReceivers)]",
-            "options": {
-              "icon": "Info",
-              "text": "Please wait until the Splunk Universal Forwarder upload has completed before hitting Review + create. This can be checked in notifications."
-            }
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
           }
         ]
       },
@@ -1342,8 +1248,8 @@
       "searchHeadSku": "[steps('shConfig').shSize]",
       "location": "[location()]",
       "tagsByResource": "[steps('tags').tagsByResource]",
-      "splunkBlobUrl": "[if(equals(steps('splunkConfig').splunkInstallInputFormat, 'url'), steps('splunkConfig').splunkInstallerURL, steps('splunkConfig').splunkInstallerFile)]",
-      "splunkUfBlobUrl": "[if(equals(steps('forwarderConfig').splunkInstallUfInputFormat, 'url'), steps('forwarderConfig').splunkInstallerUfURL, steps('forwarderConfig').splunkInstallerUfFile)]",
+      "splunkBlobUrl": "[steps('splunkConfig').splunkInstallerURL]",
+      "splunkUfBlobUrl": "[steps('forwarderConfig').splunkInstallerUfURL]",
       "virtualNetworkAddressPrefix": "[steps('nwConfig').vnetConfig.addressPrefixes]",
       "indexerSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet1.addressPrefix]",
       "searchSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet2.addressPrefix]",
