@@ -10,7 +10,7 @@ SPLUNKLOCAL=$SPLUNKHOME/etc/system/local
 
 # Option strings
 SHORT=s:u:p:r:l:d:c:D:i:h:I:v:P:a:R:S:H:C:n:f:N:
-LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-url:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,availability-zone:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:
+LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-file:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,availability-zone:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:
 
 # Get options
 OPTS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
@@ -36,8 +36,8 @@ while true ; do
       SPLUNKPW="$2"
       shift 2
       ;;
-    -l | --license-url )
-      LICENSEURL="$2"
+    -l | --license-file )
+      LICENSEFILE="$2"
       shift 2
       ;;
     -r | --role )
@@ -122,7 +122,7 @@ done
 # Print the variables
 echo "SPLUNKURL = $SPLUNKURL"
 echo "SPLUNKUSER = $SPLUNKUSER"
-echo "LICENSEURL = $LICENSEURL"
+echo "LICENSEFILE = $LICENSEFILE"
 echo "ROLE = $ROLE"
 echo "DSLB = $DSLB"
 echo "CONFURL = $CONFURL"
@@ -320,7 +320,7 @@ case "$ROLE" in
         ;;
     license-master )
         mkdir -p $SPLUNKHOME/etc/licenses/enterprise
-        wget -nv -O $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic "$LICENSEURL"
+        echo $LICENSEFILE | base64 -d > $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic
         ;;
     search-head-deployer )
         mkdir -p $SPLUNKHOME/etc/shcluster/apps/default_outputs/local
