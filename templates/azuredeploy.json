@@ -2392,6 +2392,7 @@
       "apiVersion": "2020-05-01",
       "name": "splunk-appg",
       "location": "[resourceGroup().location]",
+      "zones": ["1", "2", "3"],
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses/', 'appg')]",
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
@@ -2402,7 +2403,7 @@
           "tier": "Standard_v2"
         },
         "autoscaleConfiguration": {
-          "minCapacity": 1,
+          "minCapacity": 3,
           "maxCapacity": 10
         },
         "gatewayIPConfigurations": [
