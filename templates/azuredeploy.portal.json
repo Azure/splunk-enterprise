@@ -312,6 +312,27 @@
             },
             "visible": true
           },
+		  {
+            "name": "splunkInstallInputFormat",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Splunk Enterprise Installer Input Type",
+            "defaultValue": "URL",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "URL",
+                  "value": "url"
+                },
+                {
+                  "label": "File Upload",
+                  "value": "file"
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
           {
             "name": "splunkInstallerURL",
             "type": "Microsoft.Common.TextBox",
@@ -326,7 +347,24 @@
                 }
               ]
             },
-            "visible": true
+            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'url')]"
+          },
+		  {
+            "name": "splunkInstallerFile",
+            "type": "Microsoft.Common.FileUpload",
+            "label": "Splunk Enterprise Install File",
+            "toolTip": "Splunk Enterprise Linux install (.tgz) file",
+            "constraints": {
+              "required": true,
+              "accept": ".tgz"
+            },
+            "options": {
+              "multiple": false,
+              "uploadMode": "url",
+              "openMode": "binary",
+              "encoding": "UTF-8"
+            },
+            "visible": "[equals(steps('splunkConfig').splunkInstallInputFormat, 'file')]"
           },
           {
             "name": "licenseMasterSize",
