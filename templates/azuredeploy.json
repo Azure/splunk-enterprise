@@ -51,6 +51,13 @@
         "description": "App Gateway subnet address space."
       }
     },
+    "s2SubnetAddressPrefix": {
+      "defaultValue": "192.168.6.0/23",
+      "type": "string",
+      "metadata": {
+        "description": "SmartStore subnet address space."
+      }
+    },
     "linuxUserName": {
       "type": "string",
       "defaultValue": "splunkadmin",
@@ -1035,6 +1042,19 @@
               "networkSecurityGroup": {
                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups','appg')]"
               }
+            }
+          },
+          {
+            "name": "SmartStore",
+            "properties": {
+              "addressPrefix": "[parameters('s2SubnetAddressPrefix')]",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage"
+                }
+              ],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
             }
           }
         ]
