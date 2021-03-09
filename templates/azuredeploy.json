@@ -425,6 +425,34 @@
       "metadata": {
         "description": "Attach public IP to Syslog Receiver Load Balancer"
       }
+    },
+    "kubernetesVersion": {
+      "type": "string",
+      "defaultValue": "1.19.7"
+    },
+    "agentPoolVmSku": {
+      "type": "string",
+      "defaultValue": "Standard_D8s_v3"
+    },
+    "maxpods": {
+      "type": "int",
+      "defaultValue": 20
+    },
+    "nodecount": {
+      "type": "int",
+      "defaultValue": 3
+    },
+    "mincount": {
+      "type": "int",
+      "defaultValue": 3
+    },
+    "maxcount": {
+      "type": "int",
+      "defaultValue": 50
+    },
+    "utcValue": {
+      "type": "string",
+      "defaultValue": "[utcNow()]"
     }
   },
   "variables": {
@@ -617,7 +645,20 @@
     "appGWIpVar1": "[first(split(parameters('appGSubnetAddressPrefix'), '/'))]",
     "appGWIpVar2": "[split(variables('appGWIpVar1'), '.')]",
     "appGwIpVar3": "[add(int(variables('appGWIpVar2')[3]), 4)]",
-    "appGwIp": "[concat(variables('appGWIpVar2')[0], '.', variables('appGWIpVar2')[1], '.', variables('appGWIpVar2')[2], '.', variables('appGwIpVar3'))]"
+    "appGwIp": "[concat(variables('appGWIpVar2')[0], '.', variables('appGWIpVar2')[1], '.', variables('appGWIpVar2')[2], '.', variables('appGwIpVar3'))]",
+    "blobStorageAccountName": "[concat('smartstore', variables('resgpguid'))]",
+    "blobStorageAccountPrivateEndpointName": "[concat('smartstore', variables('resgpguid'))]",
+    "blobStorageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('blobStorageAccountName'))]",
+    "blobPublicDNSZoneForwarder": "[concat('.blob.', environment().suffixes.storage)]",
+    "blobPrivateDnsZoneName": "[concat('privatelink', variables('blobPublicDNSZoneForwarder'))]",
+    "blobPrivateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('blobPrivateDnsZoneName'))]",
+    "blobStorageAccountPrivateEndpointId": "[resourceId('Microsoft.Network/privateEndpoints', variables('blobStorageAccountPrivateEndpointName'))]",
+    "blobStorageAccountPrivateEndpointGroupName": "blob",
+    "blobPrivateDnsZoneGroup": "[concat(variables('blobStorageAccountPrivateEndpointName'),'/', variables('blobStorageAccountPrivateEndpointGroupName'), 'PrivateDnsZoneGroup')]",
+    "dsRoleAssignmentId": "[guid(resourceGroup().id, deployment().name, 'dsaccess')]",
+    "dsRoleAssignment": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+    "aksRoleAssignmentId": "[guid(resourceGroup().id, deployment().name, 'aks')]",
+    "aksRoleAssignment": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7')]"
   },
   "resources": [
     {
@@ -3118,6 +3159,299 @@
         "dnsSettings": {
           "domainNameLabel": "[concat(parameters('dnsPrefix'), '-bastion-', variables('resgpguid'))]"
         }
+      }
+    },
+    {
+      "name": "[variables('blobStorageAccountName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-06-01",
+      "tags": {
+        "displayName": "[variables('blobStorageAccountName')]"
+      },
+      "location": "[resourceGroup().location]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "properties":{
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": [],
+          "defaultAction": "Deny"
+        }
+      },
+      "resources": [
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2019-06-01",
+          "name": "default/smartstore",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', variables('blobStorageAccountName'))]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2018-09-01",
+      "name": "[variables('blobPrivateDnsZoneName')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]"
+      ],
+      "location": "global",
+      "properties": {},
+      "resources": [
+        {
+          "name": "vnet-link",
+          "type": "virtualNetworkLinks",
+          "apiVersion": "2018-09-01",
+          "location": "global",
+          "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+            "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.blob.core.windows.net')]"
+          ],
+          "properties": {
+            "virtualNetwork": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+            },
+            "registrationEnabled": false
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2020-04-01",
+      "name": "[variables('blobStorageAccountPrivateEndpointName')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts',variables('blobStorageAccountName'))]"
+      ],
+      "properties": {
+        "privateLinkServiceConnections": [
+          {
+            "name": "[variables('blobStorageAccountPrivateEndpointName')]",
+            "properties": {
+              "privateLinkServiceId": "[variables('blobStorageAccountId')]",
+              "groupIds": [
+                "[variables('blobStorageAccountPrivateEndpointGroupName')]"
+              ]
+            }
+          }
+        ],
+        "subnet": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'SmartStore')]"
+        },
+        "customDnsConfigs": [
+          {
+            "fqdn": "[concat(variables('blobStorageAccountName'), variables('blobPublicDNSZoneForwarder'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2020-03-01",
+      "name": "[variables('blobPrivateDnsZoneGroup')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[variables('blobPrivateDnsZoneId')]",
+        "[variables('blobStorageAccountPrivateEndpointId')]"
+      ],
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "dnsConfig",
+            "properties": {
+              "privateDnsZoneId": "[variables('blobPrivateDnsZoneId')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "minio",
+      "type": "Microsoft.ContainerService/managedClusters",
+      "apiVersion": "2020-11-01",
+      "location": "[resourceGroup().location]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ],
+      "properties": {
+        "kubernetesVersion": "[parameters('kubernetesVersion')]",
+        "enableRBAC": false,
+        "dnsPrefix": "[concat('minio', variables('resgpguid'))]",
+        "networkProfile": {
+          "networkPlugin": "azure",
+          "loadBalancerSku": "standard",
+          "serviceCidr": "172.16.0.0/24",
+          "dnsServiceIP": "172.16.0.10"
+        },
+        "agentPoolProfiles": [
+          {
+            "name": "system",
+            "count": 3,
+            "vmSize": "Standard_D4s_v3",
+            "osType": "Linux",
+            "osDiskSizeGB": 80,
+            "mode": "System",
+            "type": "VirtualMachineScaleSets",
+            "availabilityZones": [
+              "1",
+              "2",
+              "3"
+            ],
+            "vnetSubnetID": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'SmartStore')]"
+          },
+          {
+            "name": "user",
+            "count": "[parameters('nodecount')]",
+            "vmSize": "[parameters('agentPoolVmSku')]",
+            "osType": "Linux",
+            "osDiskType": "Ephemeral",
+            "maxPods": "[parameters('maxpods')]",
+            "scaleSetPriority": "Regular",
+            "mode": "User",
+            "type": "VirtualMachineScaleSets",
+            "enableAutoScaling": true,
+            "minCount": "[parameters('mincount')]",
+            "maxCount": "[parameters('maxcount')]",
+            "availabilityZones": [
+              "1",
+              "2",
+              "3"
+            ],
+            "vnetSubnetID": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'SmartStore')]"
+          }
+        ],
+        "linuxProfile": {
+          "adminUsername": "clusterAdmin",
+          "ssh": {
+            "publicKeys": [
+              {
+                "keyData": "[parameters('linuxSSHKey')]"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "name": "dsId",
+      "apiVersion": "2018-11-30",
+      "location": "[resourceGroup().location]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "RoleAssignmentDeployforDS",
+      "apiVersion": "2019-07-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'dsId')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2018-09-01-preview",
+              "name": "[variables('dsRoleAssignmentId')]",
+              "dependsOn": [],
+              "properties": {
+                "roleDefinitionId": "[variables('dsRoleAssignment')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'dsId'), '2018-11-30').principalId]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "RoleAssignmentDeployforAKS",
+      "apiVersion": "2019-07-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerService/managedClusters', 'minio')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2018-09-01-preview",
+              "name": "[variables('aksRoleAssignmentId')]",
+              "dependsOn": [],
+              "properties": {
+                "roleDefinitionId": "[variables('aksRoleAssignment')]",
+                "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', 'minio'), '2020-11-01', 'Full').identity.principalId]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "name": "minio",
+      "apiVersion": "2019-10-01-preview",
+      "location": "[resourceGroup().location]",
+      "kind": "AzureCLI",
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'dsId')]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('blobStorageAccountName'))]",
+        "[resourceId('Microsoft.ContainerService/managedClusters', 'minio')]"
+      ],
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceID('Microsoft.ManagedIdentity/userAssignedIdentities', 'dsId')]": {}
+        }
+      },
+      "properties": {
+        "forceUpdateTag": "[parameters('utcValue')]",
+        "AzCliVersion": "2.10.1",
+        "timeout": "PT30M",
+        "environmentVariables": [
+          {
+            "name": "RESOURCEGROUP",
+            "secureValue": "[resourceGroup().name]"
+          },
+          {
+            "name": "STORAGEACCOUNTNAME",
+            "value": "[variables('blobStorageAccountName')]"
+          },
+          {
+            "name": "STORAGEACCOUNTKEY",
+            "secureValue": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('blobStorageAccountName')), '2019-06-01').keys[0].value]"
+          },
+          {
+            "name": "DOWNLOADROOT",
+            "value": "[parameters('downloadRoot')]"
+          }
+        ],
+        "primaryScriptUri": "[concat(parameters('downloadRoot'),'/scripts/minio/minio.sh')]",
+        "cleanupPreference": "OnExpiration",
+        "retentionInterval": "P1D"
       }
     }
   ],
