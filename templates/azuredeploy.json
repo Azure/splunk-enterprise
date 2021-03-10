@@ -1358,7 +1358,7 @@
         "displayName": "licensemaster"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('managementSubnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('managementSubnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
       ],
       "properties": {
@@ -1389,7 +1389,7 @@
         "displayName": "[concat('indexer', copyindex())]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/subnets/', variables('vnetName'), variables('indexerSubnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets/', variables('vnetName'), variables('indexerSubnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
       ],
       "properties": {
@@ -1563,7 +1563,7 @@
         "displayName": "shd"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('managementSubnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('managementSubnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
       ],
       "properties": {
