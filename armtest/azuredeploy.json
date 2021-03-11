@@ -517,7 +517,15 @@
           "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', concat(variables('vnetNamePrefix'), 'Region1'), variables('managementSubnetName'))]"
         }
       }
-    }
+    },
+    "appGWIpVar1Region1": "[first(split(parameters('appGSubnetAddressPrefixRegion1'), '/'))]",
+    "appGWIpVar2Region1": "[split(variables('appGWIpVar1Region1'), '.')]",
+    "appGwIpVar3Region1": "[add(int(variables('appGWIpVar2Region1')[3]), 4)]",
+    "appGwIpRegion1": "[concat(variables('appGWIpVar2Region1')[0], '.', variables('appGWIpVar2Region1')[1], '.', variables('appGWIpVar2Region1')[2], '.', variables('appGwIpVar3Region1'))]",
+    "appGWIpVar1Region2": "[first(split(parameters('appGSubnetAddressPrefixRegion2'), '/'))]",
+    "appGWIpVar2Region2": "[split(variables('appGWIpVar1Region2'), '.')]",
+    "appGwIpVar3Region2": "[add(int(variables('appGWIpVar2Region2')[3]), 4)]",
+    "appGwIpRegion2": "[concat(variables('appGWIpVar2Region2')[0], '.', variables('appGWIpVar2Region2')[1], '.', variables('appGWIpVar2Region2')[2], '.', variables('appGwIpVar3Region2'))]"
   },
   "resources": [
     {
@@ -1607,6 +1615,367 @@
                 "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
               },
               "protocol": "tcp"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('splunk-appg-region', copyIndex(1))]",
+      "location": "[parameters('azureRegions')[copyindex()]]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses/', concat('appgRegion', copyIndex(1)))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)))]"
+      ],
+      "copy": {
+        "count": 2,
+        "mode": "Parallel",
+        "name": "appgcopy"
+      },
+      "properties": {
+        "sku": {
+          "name": "Standard_v2",
+          "tier": "Standard_v2"
+        },
+        "autoscaleConfiguration": {
+          "minCapacity": 3,
+          "maxCapacity": 10
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)), 'ApplicationGatewaySubnet')]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              "PublicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('appgRegion', copyIndex(1)))]"
+              }
+            }
+          },
+          {
+            "name": "appGatewayFrontendPrivateIP",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)), 'ApplicationGatewaySubnet')]"
+              },
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[variables(concat('appGwIpRegion', copyindex(1)))]"
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "appGatewayFrontendPort",
+            "properties": {
+              "Port": 80
+            }
+          },
+          {
+            "name": "appGatewayFrontendMonitoringConsolePort",
+            "properties": {
+              "Port": 8000
+            }
+          },
+          {
+            "name": "appGatewayFrontendClusterMasterPort",
+            "properties": {
+              "Port": 8001
+            }
+          },
+          {
+            "name": "appGatewayFrontendDeploymentServerPort",
+            "properties": {
+              "Port": 8002
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendPort",
+            "properties": {
+              "Port": 8080
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendMonitoringConsolePort",
+            "properties": {
+              "Port": 8003
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendClusterMasterPort",
+            "properties": {
+              "Port": 8004
+            }
+          },
+          {
+            "name": "appGatewayPrivateFrontendDeploymentServerPort",
+            "properties": {
+              "Port": 8005
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "searchHeadBackendPool",
+            "properties": {}
+          },
+          {
+            "name": "monitoringConsoleBackendPool",
+            "properties": {}
+          },
+          {
+            "name": "clusterMasterBackendPool",
+            "properties": {}
+          },
+          {
+            "name": "deploymentServerBackendPool",
+            "properties": {}
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "appGatewayBackendHttpSettings",
+            "properties": {
+              "Port": 8000,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled"
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "searchHeadHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "searchHeadHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayPrivateFrontendPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "monitoringConsoleHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendMonitoringConsolePort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "monitoringConsoleHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayPrivateFrontendMonitoringConsolePort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "clusterMasterHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendClusterMasterPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "clusterMasterHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayPrivateFrontendClusterMasterPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "deploymentServerHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendDeploymentServerPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          },
+          {
+            "name": "deploymentServerHttpPrivateListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', concat('splunk-appg-region', copyIndex(1)), 'appGatewayFrontendPrivateIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', concat('splunk-appg-region', copyIndex(1)), 'appGatewayPrivateFrontendDeploymentServerPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "Name": "searchHeadRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'searchHeadHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'searchHeadBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "searchHeadPrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'searchHeadHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'searchHeadBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "monitoringConsoleRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'monitoringConsoleHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'monitoringConsoleBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "monitoringConsolePrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'monitoringConsoleHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'monitoringConsoleBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "clusterMasterRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'clusterMasterHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'clusterMasterBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "clusterMasterPrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'clusterMasterHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'clusterMasterBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "deploymentServerRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'deploymentServerHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'deploymentServerBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "Name": "deploymentServerPrivateRule",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', concat('splunk-appg-region', copyIndex(1)), 'deploymentServerHttpPrivateListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', concat('splunk-appg-region', copyIndex(1)), 'deploymentServerBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
             }
           }
         ]
