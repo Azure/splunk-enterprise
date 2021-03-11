@@ -514,25 +514,7 @@
       "properties": {
         "privateIPAllocationMethod": "Dynamic",
         "subnet": {
-          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', concat(variables('vnetNamePrefix'), 'Region'), variables('managementSubnetName'))]"
-        }
-      }
-    },
-    "syslogLbFrontEnd": "[if(parameters('syslogLbPip'), variables('publicSyslogLbFrontend'), variables('privateSyslogLbFrontend'))]",
-    "publicSyslogLbFrontend": {
-      "name": "LoadBalancerFrontEnd",
-      "properties": {
-        "publicIPAddress": {
-          "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'sysloglb')]"
-        }
-      }
-    },
-    "privateSyslogLbFrontend": {
-      "name": "LoadBalancerFrontEnd",
-      "properties": {
-        "privateIPAllocationMethod": "Dynamic",
-        "subnet": {
-          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)), variables('forwarderSubnetName'))]"
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', concat(variables('vnetNamePrefix'), 'Region1'), variables('managementSubnetName'))]"
         }
       }
     }
@@ -1414,7 +1396,7 @@
             "name": "LoadBalancerOutboundFrontEnd",
             "properties": {
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'dsoutboundlb')]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('syslogOutboundlbRegion', copyIndex(1)))]"
               }
             }
           }
@@ -1444,8 +1426,8 @@
     },
     {
       "apiVersion": "2020-05-01",
-      "name": "[concat('loadBalancer-syslog-region', copyIndex(1))]",
-      "condition": "[parameters('deploySyslogReceivers')]",
+      "name": "[concat('publicLoadBalancer-syslog-region', copyIndex(1))]",
+      "condition": "[and(parameters('deploySyslogReceivers'), parameters('syslogLbPip'))]",
       "type": "Microsoft.Network/loadBalancers",
       "location": "[parameters('azureRegions')[copyindex()]]",
       "copy": {
@@ -1460,7 +1442,16 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": ["[variables('syslogLbFrontEnd')]"],
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerFrontEnd",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('sysloglbRegion', copyIndex(1)))]"
+              }
+            }
+          }
+        ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -1471,10 +1462,10 @@
             "name": "LBRule1",
             "properties": {
               "frontendIPConfiguration": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-syslog'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('publicLoadBalancer-syslog-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
               },
               "backendAddressPool": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-syslog'),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('publicLoadBalancer-syslog-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
               },
               "protocol": "tcp",
               "frontendPort": 514,
@@ -1483,7 +1474,7 @@
               "loadDistribution": "SourceIP",
               "idleTimeoutInMinutes": 5,
               "probe": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-syslog'),'/probes/tcpProbe')]"
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('publicLoadBalancer-syslog-region', copyIndex(1))),'/probes/tcpProbe')]"
               }
             }
           }
@@ -1496,6 +1487,126 @@
               "port": 514,
               "intervalInSeconds": 5,
               "numberOfProbes": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "[concat('privateLoadBalancer-syslog-region', copyIndex(1))]",
+      "condition": "[and(parameters('deploySyslogReceivers'), not(parameters('syslogLbPip')))]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[parameters('azureRegions')[copyindex()]]",
+      "copy": {
+        "count": 2,
+        "mode": "Parallel",
+        "name": "sysloglbcopy"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerFrontEnd",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)), variables('forwarderSubnetName'))]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "LBRule1",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('privateLoadBalancer-syslog-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('privateLoadBalancer-syslog-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp",
+              "frontendPort": 514,
+              "backendPort": 514,
+              "enableFloatingIP": false,
+              "loadDistribution": "SourceIP",
+              "idleTimeoutInMinutes": 5,
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('privateLoadBalancer-syslog-region', copyIndex(1))),'/probes/tcpProbe')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "tcpProbe",
+            "properties": {
+              "protocol": "tcp",
+              "port": 514,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "[concat('loadBalancer-outbound-syslog', copyIndex(1))]",
+      "condition": "[and(parameters('deploySyslogReceivers'), not(parameters('syslogLbPip')))]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[parameters('azureRegions')[copyindex()]]",
+      "copy": {
+        "count": 2,
+        "mode": "Parallel",
+        "name": "sysloglbcopy"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerOutboundFrontEnd",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('sysloglbRegion', copyIndex(1)))]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "outboundRules": [
+          {
+            "name": "OutboundRule1",
+            "properties": {
+              "frontendIPConfigurations": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerOutboundFrontEnd')]"
+                }
+              ],
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp"
             }
           }
         ]
