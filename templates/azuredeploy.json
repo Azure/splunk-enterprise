@@ -691,7 +691,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "8000",
-              "sourceAddressPrefix": "*",
+              "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 100,
@@ -719,7 +719,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "8088",
-              "sourceAddressPrefix": "*",
+              "sourceAddressPrefix": "[parameters('splunkHecCidr')]",
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 126,
@@ -747,7 +747,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "destinationPortRange": "514",
-              "sourceAddressPrefix": "*",
+              "sourceAddressPrefix": "[parameters('syslogCidr')]",
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 160,
@@ -761,7 +761,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "22",
-              "sourceAddressPrefix": "*",
+              "sourceAddressPrefix": "[parameters('splunkSSHCidr')]",
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 200,
@@ -922,7 +922,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "8000-8002",
-              "sourceAddressPrefix": "*",
+              "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 100,
@@ -936,7 +936,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "80",
-              "sourceAddressPrefix": "*",
+              "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 125,
@@ -1086,7 +1086,7 @@
             "allowGatewayTransit": false,
             "useRemoteGateways": false,
             "remoteVirtualNetwork": {
-              "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', if(equals(copyIndex(), 1), '1', '2')))]"
+              "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', if(equals(copyIndex(1), 1), '2', '1')))]"
             }
           }
         }
@@ -1096,24 +1096,38 @@
       "type": "Microsoft.Network/privateDnsZones",
       "apiVersion": "2018-09-01",
       "name": "[variables('dnsZoneName')]",
-      "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]"
-      ],
+      "dependsOn": [],
       "location": "global",
       "properties": {},
       "resources": [
         {
-          "name": "vnet-link",
+          "name": "region1-vnet-link",
           "type": "virtualNetworkLinks",
           "apiVersion": "2018-09-01",
           "location": "global",
           "dependsOn": [
-            "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+            "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region1'))]",
             "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
           ],
           "properties": {
             "virtualNetwork": {
-              "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+              "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region1'))]"
+            },
+            "registrationEnabled": true
+          }
+        },
+        {
+          "name": "region2-vnet-link",
+          "type": "virtualNetworkLinks",
+          "apiVersion": "2018-09-01",
+          "location": "global",
+          "dependsOn": [
+            "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region2'))]",
+            "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
+          ],
+          "properties": {
+            "virtualNetwork": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region2'))]"
             },
             "registrationEnabled": true
           }
@@ -1125,7 +1139,7 @@
       "condition": "[parameters('clusterMasterPip')]",
       "apiVersion": "2020-05-01",
       "name": "clustermaster",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('azureRegions')[0]]",
       "sku": {
         "name": "Standard"
       },
@@ -1144,7 +1158,7 @@
       "condition": "[parameters('licenseMasterPip')]",
       "apiVersion": "2020-05-01",
       "name": "licensemaster",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('azureRegions')[0]]",
       "sku": {
         "name": "Standard"
       },
@@ -1163,7 +1177,7 @@
       "condition": "[parameters('indexerPip')]",
       "apiVersion": "2020-05-01",
       "name": "[concat('indexer', copyindex())]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('azureRegions')[mod(copyIndex(1),2)]]",
       "sku": {
         "name": "Standard"
       },
@@ -1278,7 +1292,7 @@
       "condition": "[parameters('shdPip')]",
       "apiVersion": "2020-05-01",
       "name": "shd",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('azureRegions')[0]]",
       "sku": {
         "name": "Standard"
       },
@@ -1297,7 +1311,7 @@
       "condition": "[parameters('monitoringPip')]",
       "apiVersion": "2020-05-01",
       "name": "monitoring",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('azureRegions')[0]]",
       "sku": {
         "name": "Standard"
       },

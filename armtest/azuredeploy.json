@@ -1,0 +1,1383 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "primaryLocation": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "string"
+        },
+        "secondaryLocation": {
+            "defaultValue": "westeurope",
+            "type": "string"
+        },
+        "azureRegions": {
+            "defaultValue": [ "[resourceGroup().location]", "westeurope" ],
+            "type": "array",
+            "metadata": {
+                "description": "Target Azure regions, first item will be used for singleton resources"
+            }
+        },
+        "virtualNetworkAddressPrefixRegion1": {
+            "defaultValue": [ "10.0.0.0/16" ],
+            "type": "array",
+            "metadata": {
+                "description": "Region 1 VNET address space."
+            }
+        },
+        "virtualNetworkAddressPrefixRegion2": {
+            "defaultValue": [ "10.1.0.0/16" ],
+            "type": "array",
+            "metadata": {
+                "description": "Region 2 VNET address space."
+            }
+        },
+        "indexerSubnetAddressPrefixRegion1": {
+            "defaultValue": "10.0.0.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 1 Indexer subnet address space."
+            }
+        },
+        "indexerSubnetAddressPrefixRegion2": {
+            "defaultValue": "10.1.0.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 2 Indexer subnet address space."
+            }
+        },
+        "searchSubnetAddressPrefixRegion1": {
+            "defaultValue": "10.0.1.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 1 Search subnet address space."
+            }
+        },
+        "searchSubnetAddressPrefixRegion2": {
+            "defaultValue": "10.1.1.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 2 Search subnet address space."
+            }
+        },
+        "forwarderSubnetAddressPrefixRegion1": {
+            "defaultValue": "10.0.2.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 1 Forwarder subnet address space."
+            }
+        },
+        "forwarderSubnetAddressPrefixRegion2": {
+            "defaultValue": "10.1.2.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 2 Forwarder subnet address space."
+            }
+        },
+        "managementSubnetAddressPrefixRegion1": {
+            "defaultValue": "10.0.3.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 1 Management subnet address space."
+            }
+        },
+        "managementSubnetAddressPrefixRegion2": {
+            "defaultValue": "10.1.3.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 2 Management subnet address space."
+            }
+        },
+        "bastionSubnetAddressPrefixRegion1": {
+            "defaultValue": "10.0.4.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 1 Bastion subnet address space."
+            }
+        },
+        "bastionSubnetAddressPrefixRegion2": {
+            "defaultValue": "10.1.4.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 2 Bastion subnet address space."
+            }
+        },
+        "appGSubnetAddressPrefixRegion1": {
+            "defaultValue": "10.0.5.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 1 App Gateway subnet address space."
+            }
+        },
+        "appGSubnetAddressPrefixRegion2": {
+            "defaultValue": "10.1.5.0/24",
+            "type": "string",
+            "metadata": {
+                "description": "Region 2 App Gateway subnet address space."
+            }
+        },
+        "linuxUserName": {
+            "type": "string",
+            "defaultValue": "splunkadmin",
+            "metadata": {
+                "description": "User name for linux VMs"
+            }
+        },
+        "linuxSSHKey": {
+            "type": "string",
+            "metadata": {
+                "description": "Public key for SSH authentication"
+            }
+        },
+        "numberOfIndexers": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "Number of Indexer VMs"
+            }
+        },
+        "numberOfSearchHeads": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "Number of Search Head VMs"
+            }
+        },
+        "indexerSku": {
+            "type": "string",
+            "defaultValue": "Standard_D16ds_v4",
+            "metadata": {
+                "description": "VM SKU for Splunk indexers"
+            }
+        },
+        "searchHeadSku": {
+            "type": "string",
+            "defaultValue": "Standard_D16ds_v4",
+            "metadata": {
+                "description": "VM SKU for Splunk Search Heads"
+            }
+        },
+        "cmSku": {
+            "type": "string",
+            "defaultValue": "Standard_D8ds_v4",
+            "metadata": {
+                "description": "VM SKU for cluster master"
+            }
+        },
+        "dnsPrefix": {
+            "type": "string",
+            "defaultValue": "splunk",
+            "metadata": {
+                "description": "DNS prefix for public IP addresses"
+            }
+        },
+        "vmImage": {
+            "type": "string",
+            "defaultValue": "ubuntu1804",
+            "metadata": {
+                "description": "VM image variable identifier"
+            }
+        },
+        "splunkUser": {
+            "type": "string",
+            "defaultValue": "splunkadmin",
+            "metadata": {
+                "description": "Splunk user name to use during Splunk install"
+            }
+        },
+        "splunkPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password to use during Splunk install"
+            }
+        },
+        "splunkPass4SymmKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Pass4SymmKey to use during Splunk install"
+            }
+        },
+        "indexerPipelines": {
+            "type": "int",
+            "defaultValue": 2,
+            "metadata": {
+                "description": "Number of parallel ingestion pipelines on Indexer nodes"
+            }
+        },
+        "splunkBlobUrl": {
+            "type": "string",
+            "metadata": {
+                "description": "URL for Splunk Enterprise .tgz file"
+            }
+        },
+        "splunkUfBlobUrl": {
+            "type": "string",
+            "defaultValue": "replace-me",
+            "metadata": {
+                "description": "URL for Splunk UF .tgz file"
+            }
+        },
+        "licenseFile": {
+            "type": "string",
+            "metadata": {
+                "description": "Splunk Enterprise license file"
+            }
+        },
+        "hotDiskSize": {
+            "type": "int",
+            "defaultValue": 1024,
+            "metadata": {
+                "description": "Disk size for Premium SSD hot volume"
+            }
+        },
+        "coldDiskSize": {
+            "type": "int",
+            "defaultValue": 1024,
+            "metadata": {
+                "description": "Disk size for Standard HDD cold volume"
+            }
+        },
+        "deployHeavyForwarders": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Deploy Heavy Forwarder VMs"
+            }
+        },
+        "deploySyslogReceivers": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Deploy Syslog Receiver VMs"
+            }
+        },
+        "deployHEC": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Configure HEC on Indexers"
+            }
+        },
+        "HECPublicIp": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Configure Public IP for HEC"
+            }
+        },
+        "numberOfForwarders": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "Number of Heavy Forwarder VMs"
+            }
+        },
+        "numberOfSyslogRecievers": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "Number of Syslog Receivers VMs"
+            }
+        },
+        "hfSku": {
+            "type": "string",
+            "defaultValue": "Standard_D4ds_v4",
+            "metadata": {
+                "description": "SKU for Heavy Forwarder VMs"
+            }
+        },
+        "syslogSku": {
+            "type": "string",
+            "defaultValue": "Standard_D4ds_v4",
+            "metadata": {
+                "description": "SKU for Syslog Receiver VMs"
+            }
+        },
+        "numberOfDeploymentServers": {
+            "type": "int",
+            "defaultValue": 1,
+            "metadata": {
+                "description": "Number of Deployment Server VMs"
+            }
+        },
+        "deploymentServerSku": {
+            "type": "string",
+            "defaultValue": "Standard_D4ds_v4",
+            "metadata": {
+                "description": "SKU for Deployment Server VMs"
+            }
+        },
+        "shdSku": {
+            "type": "string",
+            "defaultValue": "Standard_D8ds_v4",
+            "metadata": {
+                "description": "SKU for Search Head Deployer VMs"
+            }
+        },
+        "hfPipelines": {
+            "type": "int",
+            "defaultValue": 2,
+            "metadata": {
+                "description": "Number of parallel ingestion pipelines on HF nodes"
+            }
+        },
+        "licenseMasterSku": {
+            "type": "string",
+            "defaultValue": "Standard_D4ds_v4",
+            "metadata": {
+                "description": "SKU for License Master VM"
+            }
+        },
+        "monitoringConsoleSku": {
+            "type": "string",
+            "defaultValue": "Standard_D16ds_v4",
+            "metadata": {
+                "description": "SKU for Monitoring Console VM"
+            }
+        },
+        "deployBastion": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Deploy Azure Bastion"
+            }
+        },
+        "replicationFactor": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "Splunk replication factor"
+            }
+        },
+        "searchFactor": {
+            "type": "int",
+            "defaultValue": 3,
+            "metadata": {
+                "description": "Splunk replication factor"
+            }
+        },
+        "vmPriority": {
+            "type": "string",
+            "defaultValue": "Regular",
+            "allowedValues": [ "Regular", "Spot" ],
+            "metadata": {
+                "description": "Priority for all VMs"
+            }
+        },
+        "splunkWebCidr": {
+            "type": "string",
+            "defaultValue": "0.0.0.0/0",
+            "metadata": {
+                "description": "Source CIDR for access to Splunk UI components"
+            }
+        },
+        "splunkSSHCidr": {
+            "type": "string",
+            "defaultValue": "0.0.0.0/0",
+            "metadata": {
+                "description": "Source CIDR for access to Splunk UI components"
+            }
+        },
+        "splunkHecCidr": {
+            "type": "string",
+            "defaultValue": "0.0.0.0/0",
+            "metadata": {
+                "description": "Source CIDR for access to Splunk HEC port"
+            }
+        },
+        "syslogCidr": {
+            "type": "string",
+            "defaultValue": "0.0.0.0/0",
+            "metadata": {
+                "description": "Source CIDR for access to Splunk Syslog Receiver port"
+            }
+        },
+        "downloadRoot": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/Azure/splunk-enterprise/main",
+            "metadata": {
+                "description": "Root directory for Splunk install scripts and config"
+            }
+        },
+        "coldStorageTier": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [ "Standard_LRS", "StandardSSD_LRS", "Premium_LRS" ],
+            "metadata": {
+                "description": "Storage tier for cold volume attached disk"
+            }
+        },
+        "dnsZoneName": {
+            "type": "string",
+            "defaultValue": "splunk.azure",
+            "metadata": {
+                "description": "Name for internal private DNS zone"
+            }
+        },
+        "clusterMasterPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Cluster Master VM"
+            }
+        },
+        "licenseMasterPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to License Master VM"
+            }
+        },
+        "shdPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Search Head Deployer VM"
+            }
+        },
+        "monitoringPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Monitoring Console VM"
+            }
+        },
+        "indexerPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Indexer VMs"
+            }
+        },
+        "shPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Search Head VMs"
+            }
+        },
+        "hfPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Heavy Forwarder VMs"
+            }
+        },
+        "syslogPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Syslog VMs"
+            }
+        },
+        "dsPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Deployment Server VMs"
+            }
+        },
+        "dsLbPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Deployment Server Load Balancer"
+            }
+        },
+        "syslogLbPip": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Attach public IP to Syslog Receiver Load Balancer"
+            }
+        }
+    },
+    "functions": [],
+    "variables": {
+        "vnetNamePrefix": "splunkvnet",
+        "indexerSubnetName": "indexer",
+        "searchSubnetName": "search",
+        "managementSubnetName": "management",
+        "forwarderSubnetName": "forwarders",
+        "dnsZoneName": "splunk.azure",
+        "resgpguid": "[substring(replace(guid(resourceGroup().id), '-', ''), 0, 4)]",
+        "dsLbFrontEnd": "[if(parameters('dsLbPip'), variables('publicDsLbFrontend'), variables('privateDsLbFrontend'))]",
+        "publicDsLbFrontend": {
+            "name": "LoadBalancerFrontEnd",
+            "properties": {
+                "publicIPAddress": {
+                    "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'dslb')]"
+                }
+            }
+        },
+        "privateDsLbFrontend": {
+            "name": "LoadBalancerFrontEnd",
+            "properties": {
+                "privateIPAllocationMethod": "Dynamic",
+                "subnet": {
+                    "id": "[variables('managementSubnetId')]"
+                }
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[concat(variables('vnetNamePrefix'), 'Region', copyIndex(1))]",
+            "apiVersion": "2020-05-01",
+            "location": "[parameters('azureRegions')[copyIndex()]]",
+            "copy": {
+                "name": "vnetcopy",
+                "count": 2,
+                "mode": "Parallel"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', concat('splunkRegion', copyindex(1)))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', concat('appgRegion', copyindex(1)))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', concat('bastionRegion', copyindex(1)))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": "[parameters(concat('virtualNetworkAddressPrefixRegion', copyIndex(1)))]"
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('indexerSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters(concat('indexerSubnetAddressPrefix', 'Region', copyIndex(1)))]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat('splunkRegion', copyindex(1)))]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Storage"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "[variables('searchSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters(concat('searchSubnetAddressPrefix', 'Region', copyIndex(1)))]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat('splunkRegion', copyindex(1)))]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Storage"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "[variables('managementSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters(concat('managementSubnetAddressPrefix', 'Region', copyIndex(1)))]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat('splunkRegion', copyindex(1)))]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Storage"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "[variables('forwarderSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters(concat('forwarderSubnetAddressPrefix', 'Region', copyIndex(1)))]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat('splunkRegion', copyindex(1)))]"
+                            },
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Storage"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "AzureBastionSubnet",
+                        "properties": {
+                            "addressPrefix": "[parameters(concat('bastionSubnetAddressPrefix', 'Region', copyIndex(1)))]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat('bastionRegion', copyindex(1)))]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "ApplicationGatewaySubnet",
+                        "properties": {
+                            "addressPrefix": "[parameters(concat('appGSubnetAddressPrefix', 'Region', copyIndex(1)))]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat('appgRegion', copyindex(1)))]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "apiVersion": "2020-05-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "[concat('Region', copyIndex(1), 'toRemote')]",
+                    "location": "[parameters('azureRegions')[copyIndex()]]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region1'))]",
+                        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region2'))]"
+                    ],
+                    "properties": {
+                        "allowVirtualNetworkAccess": true,
+                        "allowForwardedTraffic": false,
+                        "allowGatewayTransit": false,
+                        "useRemoteGateways": false,
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', if(equals(copyIndex(), 1), '1', '2')))]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('splunkRegion', copyIndex(1))]",
+            "location": "[parameters('azureRegions')[copyIndex()]]",
+            "copy": {
+                "name": "nsgcopy",
+                "count": 2,
+                "mode": "Parallel"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Port_8000",
+                        "properties": {
+                            "description": "Access to Splunk admin console",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8000",
+                            "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Port_8089",
+                        "properties": {
+                            "description": "Access to Splunk management port",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8089",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 125,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Port_8088",
+                        "properties": {
+                            "description": "Access to HEC",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8088",
+                            "sourceAddressPrefix": "[parameters('splunkHecCidr')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 126,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Port_9997",
+                        "properties": {
+                            "description": "Splunk receiver",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "9997",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 150,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Port_514",
+                        "properties": {
+                            "description": "Splunk syslog",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "514",
+                            "sourceAddressPrefix": "[parameters('syslogCidr')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 160,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Port_22",
+                        "properties": {
+                            "description": "SSH access to VMs",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "[parameters('splunkSSHCidr')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 200,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('bastionRegion', copyIndex(1))]",
+            "location": "[parameters('azureRegions')[copyIndex()]]",
+            "copy": {
+                "name": "nsgcopy",
+                "count": 2,
+                "mode": "Parallel"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "bastion-https-in-allow",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationPortRange": "443",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-gatewaymanager-in-allow",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "GatewayManager",
+                            "destinationPortRanges": [ "443", "4443" ],
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 120,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-in-deny",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 900,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-vnet-out-allow",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationPortRanges": [ "22", "3389" ],
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 105,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-host-communication-in-allow",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationPortRanges": [ "8080", "5701" ],
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-loadbalancer-in-allow",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationPortRange": "443",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 130,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-vnet-vnet-out-allow",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationPortRanges": [ "8080", "5701" ],
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 110,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-azure-out-allow",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationPortRanges": [ "443", "80" ],
+                            "destinationAddressPrefix": "AzureCloud",
+                            "access": "Allow",
+                            "priority": 120,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "bastion-internet-out-allow",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationPortRange": "80",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 130,
+                            "direction": "Outbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('appgRegion', copyIndex(1))]",
+            "location": "[parameters('azureRegions')[copyIndex()]]",
+            "copy": {
+                "name": "nsgcopy",
+                "count": 2,
+                "mode": "Parallel"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "Port_8000_2",
+                        "properties": {
+                            "description": "Access to Splunk",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8000-8002",
+                            "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Port_80",
+                        "properties": {
+                            "description": "Access to Splunk via port 80",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "[parameters('splunkWebCidr')]",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 125,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "appGwAdmin",
+                        "properties": {
+                            "description": "AppGw required ports",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "65200-65535",
+                            "sourceAddressPrefix": "GatewayManager",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 126,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "appGwAdmin2",
+                        "properties": {
+                            "description": "AppGw required ports",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 127,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2018-09-01",
+            "name": "[variables('dnsZoneName')]",
+            "dependsOn": [],
+            "location": "global",
+            "properties": {},
+            "resources": [
+                {
+                    "name": "region1-vnet-link",
+                    "type": "virtualNetworkLinks",
+                    "apiVersion": "2018-09-01",
+                    "location": "global",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region1'))]",
+                        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
+                    ],
+                    "properties": {
+                        "virtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region1'))]"
+                        },
+                        "registrationEnabled": true
+                    }
+                },
+                {
+                    "name": "region2-vnet-link",
+                    "type": "virtualNetworkLinks",
+                    "apiVersion": "2018-09-01",
+                    "location": "global",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region2'))]",
+                        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
+                    ],
+                    "properties": {
+                        "virtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region2'))]"
+                        },
+                        "registrationEnabled": true
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('clusterMasterPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "clustermaster",
+            "location": "[parameters('azureRegions')[0]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "clustermaster"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-clustermaster-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('licenseMasterPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "licensemaster",
+            "location": "[parameters('azureRegions')[0]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "licensemaster"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-licensemaster-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('indexerPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('indexer', copyindex())]",
+            "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "copy": {
+                "name": "indexerpipcopy",
+                "count": "[parameters('numberOfIndexers')]"
+            },
+            "tags": {
+                "displayName": "[concat('indexer', copyindex())]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-indexer', copyindex(), '-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('shPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('sh', copyindex())]",
+            "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "copy": {
+                "name": "shpipcopy",
+                "count": "[parameters('numberOfSearchHeads')]"
+            },
+            "tags": {
+                "displayName": "[concat('sh', copyindex())]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-sh', copyindex(), '-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('hf', copyindex())]",
+            "condition": "[and(parameters('deployHeavyForwarders'), parameters('hfPip'))]",
+            "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "copy": {
+                "name": "forwarderpipcopy",
+                "count": "[parameters('numberOfForwarders')]"
+            },
+            "tags": {
+                "displayName": "[concat('hf', copyindex())]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-hf', copyindex(), '-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('syslog', copyindex())]",
+            "condition": "[and(parameters('deploySyslogReceivers'), parameters('syslogPip'))]",
+            "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "copy": {
+                "name": "syslogpipcopy",
+                "count": "[parameters('numberOfSyslogRecievers')]"
+            },
+            "tags": {
+                "displayName": "[concat('syslog', copyindex())]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-syslog', copyindex(), '-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "condition": "[parameters('dsPip')]",
+            "name": "[concat('ds', copyindex())]",
+            "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "copy": {
+                "name": "dspipcopy",
+                "count": "[parameters('numberOfDeploymentServers')]"
+            },
+            "tags": {
+                "displayName": "[concat('ds', copyindex())]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-ds', copyindex(), '-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('shdPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "shd",
+            "location": "[parameters('azureRegions')[0]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "shd"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-shd-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('monitoringPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "monitoring",
+            "location": "[parameters('azureRegions')[0]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "monitoring"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-monitoring-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('appgRegion', copyIndex(1))]",
+            "location": "[parameters('azureRegions')[copyindex()]]",
+            "copy": {
+                "count": 2,
+                "mode": "Parallel",
+                "name": "appgpipcopy"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "appg"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('hecRegion', copyIndex(1))]",
+            "condition": "[parameters('HECPublicIp')]",
+            "location": "[parameters('azureRegions')[copyindex()]]",
+            "copy": {
+                "count": 2,
+                "mode": "Parallel",
+                "name": "hecpipcopy"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "hec"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-hec-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('dsLbPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "dslb",
+            "location": "[parameters('azureRegions')[0]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "dslb"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-ds-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "dsOutboundlb",
+            "condition": "[not(parameters('dsLbPip'))]",
+            "location": "[parameters('azureRegions')[0]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "dsoutboundlb"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-ds-outbound-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('syslogOutboundlbRegion', copyIndex(1))]",
+            "condition": "[not(parameters('syslogLbPip'))]",
+            "location": "[parameters('azureRegions')[copyindex()]]",
+            "copy": {
+                "count": 2,
+                "mode": "Parallel",
+                "name": "syslogoutboundlbpipcopy"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "[concat('syslogOutboundlbRegion', copyIndex(1))]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-syslog-outbound-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('syslogLbPip')]",
+            "apiVersion": "2020-05-01",
+            "name": "[concat('sysloglbRegion', copyIndex(1))]",
+            "location": "[parameters('azureRegions')[copyindex()]]",
+            "copy": {
+                "count": 2,
+                "mode": "Parallel",
+                "name": "sysloglbpipcopy"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "[concat('sysloglbRegion', copyIndex(1))]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-syslog-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "condition": "[parameters('deployBastion')]",
+            "apiVersion": "2020-05-01",
+            "name": "bastion",
+            "location": "[parameters('azureRegions')[0]]",
+            "sku": {
+                "name": "Standard"
+            },
+            "tags": {
+                "displayName": "bastion"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[concat(parameters('dnsPrefix'), '-bastion-', variables('resgpguid'))]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2020-05-01",
+            "name": "loadBalancer-ds",
+            "type": "Microsoft.Network/loadBalancers",
+            "location": "[parameters('azureRegions')[0]]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region1'))]"
+            ],
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "frontendIPConfigurations": [ "[variables('dsLbFrontEnd')]" ],
+                "backendAddressPools": [
+                    {
+                        "name": "LoadBalancerBackEndPool1"
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "LBRule1",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds'),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+                            },
+                            "protocol": "tcp",
+                            "frontendPort": 8089,
+                            "backendPort": 8089,
+                            "enableFloatingIP": false,
+                            "loadDistribution": "SourceIP",
+                            "idleTimeoutInMinutes": 5,
+                            "probe": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds'),'/probes/tcpProbe')]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "tcpProbe",
+                        "properties": {
+                            "protocol": "tcp",
+                            "port": 8089,
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 2
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {}
+}
