@@ -2,53 +2,109 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "virtualNetworkAddressPrefix": {
-      "defaultValue": ["192.168.0.0/16"],
+    "azureRegions": {
+      "defaultValue": ["northeurope", "westeurope"],
       "type": "array",
       "metadata": {
-        "description": "VNET address space."
+        "description": "Target Azure regions, first item will be used for singleton resources"
       }
     },
-    "indexerSubnetAddressPrefix": {
-      "defaultValue": "192.168.0.0/24",
-      "type": "string",
+    "virtualNetworkAddressPrefixRegion1": {
+      "defaultValue": ["10.0.0.0/16"],
+      "type": "array",
       "metadata": {
-        "description": "Indexer subnet address space."
+        "description": "Region 1 VNET address space."
       }
     },
-    "searchSubnetAddressPrefix": {
-      "defaultValue": "192.168.1.0/24",
-      "type": "string",
+    "virtualNetworkAddressPrefixRegion2": {
+      "defaultValue": ["10.1.0.0/16"],
+      "type": "array",
       "metadata": {
-        "description": "Search subnet address space."
+        "description": "Region 2 VNET address space."
       }
     },
-    "forwarderSubnetAddressPrefix": {
-      "defaultValue": "192.168.2.0/24",
+    "indexerSubnetAddressPrefixRegion1": {
+      "defaultValue": "10.0.0.0/24",
       "type": "string",
       "metadata": {
-        "description": "Forwarder subnet address space."
+        "description": "Region 1 Indexer subnet address space."
       }
     },
-    "managementSubnetAddressPrefix": {
-      "defaultValue": "192.168.3.0/24",
+    "indexerSubnetAddressPrefixRegion2": {
+      "defaultValue": "10.1.0.0/24",
       "type": "string",
       "metadata": {
-        "description": "Management subnet address space."
+        "description": "Region 2 Indexer subnet address space."
       }
     },
-    "bastionSubnetAddressPrefix": {
-      "defaultValue": "192.168.4.0/24",
+    "searchSubnetAddressPrefixRegion1": {
+      "defaultValue": "10.0.1.0/24",
       "type": "string",
       "metadata": {
-        "description": "Bastion subnet address space."
+        "description": "Region 1 Search subnet address space."
       }
     },
-    "appGSubnetAddressPrefix": {
-      "defaultValue": "192.168.5.0/24",
+    "searchSubnetAddressPrefixRegion2": {
+      "defaultValue": "10.1.1.0/24",
       "type": "string",
       "metadata": {
-        "description": "App Gateway subnet address space."
+        "description": "Region 2 Search subnet address space."
+      }
+    },
+    "forwarderSubnetAddressPrefixRegion1": {
+      "defaultValue": "10.0.2.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 1 Forwarder subnet address space."
+      }
+    },
+    "forwarderSubnetAddressPrefixRegion2": {
+      "defaultValue": "10.1.2.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 2 Forwarder subnet address space."
+      }
+    },
+    "managementSubnetAddressPrefixRegion1": {
+      "defaultValue": "10.0.3.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 1 Management subnet address space."
+      }
+    },
+    "managementSubnetAddressPrefixRegion2": {
+      "defaultValue": "10.1.3.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 2 Management subnet address space."
+      }
+    },
+    "bastionSubnetAddressPrefixRegion1": {
+      "defaultValue": "10.0.4.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 1 Bastion subnet address space."
+      }
+    },
+    "bastionSubnetAddressPrefixRegion2": {
+      "defaultValue": "10.1.4.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 2 Bastion subnet address space."
+      }
+    },
+    "appGSubnetAddressPrefixRegion1": {
+      "defaultValue": "10.0.5.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 1 App Gateway subnet address space."
+      }
+    },
+    "appGSubnetAddressPrefixRegion2": {
+      "defaultValue": "10.1.5.0/24",
+      "type": "string",
+      "metadata": {
+        "description": "Region 2 App Gateway subnet address space."
       }
     },
     "linuxUserName": {
