@@ -105,10 +105,10 @@
             "value": true
         },
         "deployHEC": {
-            "value": false
+            "value": true
         },
         "HECPublicIp": {
-            "value": false
+            "value": true
         },
         "numberOfForwarders": {
             "value": 3
@@ -204,7 +204,10 @@
             "value": true
         },
         "syslogLbPip": {
-            "value": true
+            "value": false
+        },
+        "secondaryRegion": {
+            "value": "ukwest"
         }
     }
 }
