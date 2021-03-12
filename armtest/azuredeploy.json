@@ -2,30 +2,28 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "primaryLocation": {
-      "defaultValue": "[resourceGroup().location]",
-      "type": "string"
-    },
-    "secondaryLocation": {
-      "defaultValue": "westeurope",
-      "type": "string"
-    },
     "azureRegions": {
-      "defaultValue": ["[resourceGroup().location]", "westeurope"],
+      "defaultValue": [ "[resourceGroup().location]", "[parameters('secondaryRegion')]" ],
       "type": "array",
       "metadata": {
         "description": "Target Azure regions, first item will be used for singleton resources"
       }
     },
+    "secondaryRegion": {
+      "type": "string",
+      "metadata": {
+        "description": "Secondary Azure region"
+      }
+    },
     "virtualNetworkAddressPrefixRegion1": {
-      "defaultValue": ["10.0.0.0/16"],
+      "defaultValue": [ "10.0.0.0/16" ],
       "type": "array",
       "metadata": {
         "description": "Region 1 VNET address space."
       }
     },
     "virtualNetworkAddressPrefixRegion2": {
-      "defaultValue": ["10.1.0.0/16"],
+      "defaultValue": [ "10.1.0.0/16" ],
       "type": "array",
       "metadata": {
         "description": "Region 2 VNET address space."
@@ -358,7 +356,7 @@
     "vmPriority": {
       "type": "string",
       "defaultValue": "Regular",
-      "allowedValues": ["Regular", "Spot"],
+      "allowedValues": [ "Regular", "Spot" ],
       "metadata": {
         "description": "Priority for all VMs"
       }
@@ -401,7 +399,7 @@
     "coldStorageTier": {
       "type": "string",
       "defaultValue": "Standard_LRS",
-      "allowedValues": ["Standard_LRS", "StandardSSD_LRS", "Premium_LRS"],
+      "allowedValues": [ "Standard_LRS", "StandardSSD_LRS", "Premium_LRS" ],
       "metadata": {
         "description": "Storage tier for cold volume attached disk"
       }
@@ -518,6 +516,60 @@
         }
       }
     },
+    "syslogLbFrontEnd": "[if(parameters('syslogLbPip'), variables('publicSyslogLbFrontend'), variables('privateSyslogLbFrontend'))]",
+    "hecLbFrontEnd": "[if(parameters('hecPublicIp'), variables('publicHecLbFrontend'), variables('privateHecLbFrontend'))]",
+    "copy": [
+      {
+        "name": "publicSyslogLbFrontend",
+        "count": 2,
+        "input": {
+          "name": "LoadBalancerFrontEnd",
+          "properties": {
+            "publicIPAddress": {
+              "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('sysloglbRegion', copyIndex('publicSyslogLbFrontend', 1)))]"
+            }
+          }
+        }
+      },
+      {
+        "name": "privateSyslogLbFrontend",
+        "count": 2,
+        "input": {
+          "name": "LoadBalancerFrontEnd",
+          "properties": {
+            "privateIPAllocationMethod": "Dynamic",
+            "subnet": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', copyIndex('privateSyslogLbFrontend', 1)), variables('forwarderSubnetName'))]"
+            }
+          }
+        }
+      },
+      {
+        "name": "publicHecLbFrontend",
+        "count": 2,
+        "input": {
+          "name": "LoadBalancerFrontEnd",
+          "properties": {
+            "publicIPAddress": {
+              "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('hecRegion', copyIndex('publicHecLbFrontend', 1)))]"
+            }
+          }
+        }
+      },
+      {
+        "name": "privateHecLbFrontend",
+        "count": 2,
+        "input": {
+          "name": "LoadBalancerFrontEnd",
+          "properties": {
+            "privateIPAllocationMethod": "Dynamic",
+            "subnet": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', copyIndex('privateHecLbFrontend', 1)), variables('indexerSubnetName'))]"
+            }
+          }
+        }
+      }
+    ],
     "appGWIpVar1Region1": "[first(split(parameters('appGSubnetAddressPrefixRegion1'), '/'))]",
     "appGWIpVar2Region1": "[split(variables('appGWIpVar1Region1'), '.')]",
     "appGwIpVar3Region1": "[add(int(variables('appGWIpVar2Region1')[3]), 4)]",
@@ -776,7 +828,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "GatewayManager",
-              "destinationPortRanges": ["443", "4443"],
+              "destinationPortRanges": [ "443", "4443" ],
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 120,
@@ -802,7 +854,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": ["22", "3389"],
+              "destinationPortRanges": [ "22", "3389" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 105,
@@ -815,7 +867,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": ["8080", "5701"],
+              "destinationPortRanges": [ "8080", "5701" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -841,7 +893,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": ["8080", "5701"],
+              "destinationPortRanges": [ "8080", "5701" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -854,7 +906,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": ["443", "80"],
+              "destinationPortRanges": [ "443", "80" ],
               "destinationAddressPrefix": "AzureCloud",
               "access": "Allow",
               "priority": 120,
@@ -1345,7 +1397,7 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": ["[variables('dsLbFrontEnd')]"],
+        "frontendIPConfigurations": [ "[variables('dsLbFrontEnd')]" ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -1434,8 +1486,8 @@
     },
     {
       "apiVersion": "2020-05-01",
-      "name": "[concat('publicLoadBalancer-syslog-region', copyIndex(1))]",
-      "condition": "[and(parameters('deploySyslogReceivers'), parameters('syslogLbPip'))]",
+      "name": "[concat('loadBalancer-syslog-region', copyIndex(1))]",
+      "condition": "[parameters('deploySyslogReceivers')]",
       "type": "Microsoft.Network/loadBalancers",
       "location": "[parameters('azureRegions')[copyindex()]]",
       "copy": {
@@ -1450,16 +1502,7 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": [
-          {
-            "name": "LoadBalancerFrontEnd",
-            "properties": {
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('sysloglbRegion', copyIndex(1)))]"
-              }
-            }
-          }
-        ],
+        "frontendIPConfigurations": [ "[variables('syslogLbFrontEnd')[copyIndex()]]" ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -1470,10 +1513,10 @@
             "name": "LBRule1",
             "properties": {
               "frontendIPConfiguration": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('publicLoadBalancer-syslog-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-syslog-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
               },
               "backendAddressPool": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('publicLoadBalancer-syslog-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-syslog-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
               },
               "protocol": "tcp",
               "frontendPort": 514,
@@ -1482,7 +1525,7 @@
               "loadDistribution": "SourceIP",
               "idleTimeoutInMinutes": 5,
               "probe": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('publicLoadBalancer-syslog-region', copyIndex(1))),'/probes/tcpProbe')]"
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-syslog-region', copyIndex(1))),'/probes/tcpProbe')]"
               }
             }
           }
@@ -1502,76 +1545,7 @@
     },
     {
       "apiVersion": "2020-05-01",
-      "name": "[concat('privateLoadBalancer-syslog-region', copyIndex(1))]",
-      "condition": "[and(parameters('deploySyslogReceivers'), not(parameters('syslogLbPip')))]",
-      "type": "Microsoft.Network/loadBalancers",
-      "location": "[parameters('azureRegions')[copyindex()]]",
-      "copy": {
-        "count": 2,
-        "mode": "Parallel",
-        "name": "sysloglbcopy"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)))]"
-      ],
-      "sku": {
-        "name": "Standard"
-      },
-      "properties": {
-        "frontendIPConfigurations": [
-          {
-            "name": "LoadBalancerFrontEnd",
-            "properties": {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)), variables('forwarderSubnetName'))]"
-              }
-            }
-          }
-        ],
-        "backendAddressPools": [
-          {
-            "name": "LoadBalancerBackEndPool1"
-          }
-        ],
-        "loadBalancingRules": [
-          {
-            "name": "LBRule1",
-            "properties": {
-              "frontendIPConfiguration": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('privateLoadBalancer-syslog-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
-              },
-              "backendAddressPool": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('privateLoadBalancer-syslog-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
-              },
-              "protocol": "tcp",
-              "frontendPort": 514,
-              "backendPort": 514,
-              "enableFloatingIP": false,
-              "loadDistribution": "SourceIP",
-              "idleTimeoutInMinutes": 5,
-              "probe": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('privateLoadBalancer-syslog-region', copyIndex(1))),'/probes/tcpProbe')]"
-              }
-            }
-          }
-        ],
-        "probes": [
-          {
-            "name": "tcpProbe",
-            "properties": {
-              "protocol": "tcp",
-              "port": 514,
-              "intervalInSeconds": 5,
-              "numberOfProbes": 2
-            }
-          }
-        ]
-      }
-    },
-    {
-      "apiVersion": "2020-05-01",
-      "name": "[concat('loadBalancer-outbound-syslog', copyIndex(1))]",
+      "name": "[concat('loadBalancer-outbound-syslog-region', copyIndex(1))]",
       "condition": "[and(parameters('deploySyslogReceivers'), not(parameters('syslogLbPip')))]",
       "type": "Microsoft.Network/loadBalancers",
       "location": "[parameters('azureRegions')[copyindex()]]",
@@ -1592,7 +1566,7 @@
             "name": "LoadBalancerOutboundFrontEnd",
             "properties": {
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('sysloglbRegion', copyIndex(1)))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('syslogOutboundlbRegion', copyIndex(1)))]"
               }
             }
           }
@@ -1608,13 +1582,73 @@
             "properties": {
               "frontendIPConfigurations": [
                 {
-                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerOutboundFrontEnd')]"
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerOutboundFrontEnd')]"
                 }
               ],
               "backendAddressPool": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
               },
               "protocol": "tcp"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "[concat('loadBalancer-hec-region', copyIndex(1))]",
+      "type": "Microsoft.Network/loadBalancers",
+      "condition": "[parameters('deployHEC')]",
+      "location": "[parameters('azureRegions')[copyindex()]]",
+      "copy": {
+        "count": 2,
+        "mode": "Parallel",
+        "name": "heclbcopy"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [ "[variables('hecLbFrontEnd')[copyIndex()]]" ],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "loadBalancingRules": [
+          {
+            "name": "LBRule1",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-hec-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerFrontEnd')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-hec-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp",
+              "frontendPort": 8088,
+              "backendPort": 8088,
+              "enableFloatingIP": false,
+              "loadDistribution": "SourceIP",
+              "idleTimeoutInMinutes": 5,
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-hec-region', copyIndex(1))),'/probes/tcpProbe')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "tcpProbe",
+            "properties": {
+              "protocol": "Https",
+              "port": 8088,
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2,
+              "requestPath": "/services/collector/health/1.0"
             }
           }
         ]
