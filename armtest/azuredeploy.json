@@ -3,10 +3,19 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "azureRegions": {
-      "defaultValue": [ "[resourceGroup().location]", "[parameters('secondaryRegion')]" ],
+      "defaultValue": [
+        "[parameters('primaryRegion')]",
+        "[parameters('secondaryRegion')]"
+      ],
       "type": "array",
       "metadata": {
         "description": "Target Azure regions, first item will be used for singleton resources"
+      }
+    },
+    "primaryRegion": {
+      "type": "string",
+      "metadata": {
+        "description": "Primary Azure region"
       }
     },
     "secondaryRegion": {
@@ -16,14 +25,14 @@
       }
     },
     "virtualNetworkAddressPrefixRegion1": {
-      "defaultValue": [ "10.0.0.0/16" ],
+      "defaultValue": ["10.0.0.0/16"],
       "type": "array",
       "metadata": {
         "description": "Region 1 VNET address space."
       }
     },
     "virtualNetworkAddressPrefixRegion2": {
-      "defaultValue": [ "10.1.0.0/16" ],
+      "defaultValue": ["10.1.0.0/16"],
       "type": "array",
       "metadata": {
         "description": "Region 2 VNET address space."
@@ -356,7 +365,7 @@
     "vmPriority": {
       "type": "string",
       "defaultValue": "Regular",
-      "allowedValues": [ "Regular", "Spot" ],
+      "allowedValues": ["Regular", "Spot"],
       "metadata": {
         "description": "Priority for all VMs"
       }
@@ -399,7 +408,7 @@
     "coldStorageTier": {
       "type": "string",
       "defaultValue": "Standard_LRS",
-      "allowedValues": [ "Standard_LRS", "StandardSSD_LRS", "Premium_LRS" ],
+      "allowedValues": ["Standard_LRS", "StandardSSD_LRS", "Premium_LRS"],
       "metadata": {
         "description": "Storage tier for cold volume attached disk"
       }
@@ -518,6 +527,7 @@
     },
     "syslogLbFrontEnd": "[if(parameters('syslogLbPip'), variables('publicSyslogLbFrontend'), variables('privateSyslogLbFrontend'))]",
     "hecLbFrontEnd": "[if(parameters('hecPublicIp'), variables('publicHecLbFrontend'), variables('privateHecLbFrontend'))]",
+    "syslogNicBep": "[if(parameters('syslogLbPip'), variables('syslogLbBep'), concat(variables('syslogLbBep'), ',', variables('syslogOutboundLbBep')))]",
     "copy": [
       {
         "name": "publicSyslogLbFrontend",
@@ -568,6 +578,20 @@
             }
           }
         }
+      },
+      {
+        "name": "syslogOutboundLbBep",
+        "count": 2,
+        "input": {
+            "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog-region', copyIndex('syslogOutboundLbBep'))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+          }
+      },
+      {
+        "name": "syslogLbBep",
+        "count": 2,
+        "input": {
+            "id": "[concat(resourceId('Microsoft.Network/loadBalancers',concat('loadBalancer-syslog-region', copyIndex('syslogLbBep'))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+          }
       }
     ],
     "appGWIpVar1Region1": "[first(split(parameters('appGSubnetAddressPrefixRegion1'), '/'))]",
@@ -577,7 +601,19 @@
     "appGWIpVar1Region2": "[first(split(parameters('appGSubnetAddressPrefixRegion2'), '/'))]",
     "appGWIpVar2Region2": "[split(variables('appGWIpVar1Region2'), '.')]",
     "appGwIpVar3Region2": "[add(int(variables('appGWIpVar2Region2')[3]), 4)]",
-    "appGwIpRegion2": "[concat(variables('appGWIpVar2Region2')[0], '.', variables('appGWIpVar2Region2')[1], '.', variables('appGWIpVar2Region2')[2], '.', variables('appGwIpVar3Region2'))]"
+    "appGwIpRegion2": "[concat(variables('appGWIpVar2Region2')[0], '.', variables('appGWIpVar2Region2')[1], '.', variables('appGWIpVar2Region2')[2], '.', variables('appGwIpVar3Region2'))]",
+    "clusterMasterPipId": {
+      "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'clustermaster')]"
+    },
+    "licensemasterPipId": {
+      "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'licensemaster')]"
+    },
+    "shdPipId": {
+      "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'shd')]"
+    },
+    "monitoringPipId": {
+      "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'monitoring')]"
+    }
   },
   "resources": [
     {
@@ -828,7 +864,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "GatewayManager",
-              "destinationPortRanges": [ "443", "4443" ],
+              "destinationPortRanges": ["443", "4443"],
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 120,
@@ -854,7 +890,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": [ "22", "3389" ],
+              "destinationPortRanges": ["22", "3389"],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 105,
@@ -867,7 +903,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": [ "8080", "5701" ],
+              "destinationPortRanges": ["8080", "5701"],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -893,7 +929,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": [ "8080", "5701" ],
+              "destinationPortRanges": ["8080", "5701"],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -906,7 +942,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": [ "443", "80" ],
+              "destinationPortRanges": ["443", "80"],
               "destinationAddressPrefix": "AzureCloud",
               "access": "Allow",
               "priority": 120,
@@ -1397,7 +1433,7 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": [ "[variables('dsLbFrontEnd')]" ],
+        "frontendIPConfigurations": ["[variables('dsLbFrontEnd')]"],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -1502,7 +1538,9 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": [ "[variables('syslogLbFrontEnd')[copyIndex()]]" ],
+        "frontendIPConfigurations": [
+          "[variables('syslogLbFrontEnd')[copyIndex()]]"
+        ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -1612,7 +1650,9 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": [ "[variables('hecLbFrontEnd')[copyIndex()]]" ],
+        "frontendIPConfigurations": [
+          "[variables('hecLbFrontEnd')[copyIndex()]]"
+        ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -2009,6 +2049,292 @@
               },
               "backendHttpSettings": {
                 "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', concat('splunk-appg-region', copyIndex(1)), 'appGatewayBackendHttpSettings')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "bastion",
+      "condition": "[parameters('deployBastion')]",
+      "type": "Microsoft.Network/bastionHosts",
+      "apiVersion": "2020-05-01",
+      "location": "[parameters('azureRegions')[0]]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', 'bastion')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region1'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region1'), 'AzureBastionSubnet')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'bastion')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "clustermaster",
+      "location": "[parameters('azureRegions')[0]]",
+      "tags": {
+        "displayName": "clustermaster"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region1'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/applicationGateways/','splunk-appg-region1')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'splunk-appg-region1'), '/backendAddressPools/clusterMasterBackendPool')]"
+                }
+              ],
+              "publicIPAddress": "[if(parameters('clusterMasterPip'), variables('clusterMasterPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region1'), variables('managementSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "licensemaster",
+      "location": "[parameters('azureRegions')[0]]",
+      "tags": {
+        "displayName": "licensemaster"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region1'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('licenseMasterPip'), variables('licensemasterPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region1'), variables('managementSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "shd",
+      "location": "[parameters('azureRegions')[0]]",
+      "tags": {
+        "displayName": "shd"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region1'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('shdPip'), variables('shdPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region1'), variables('managementSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "monitoring",
+      "location": "[parameters('azureRegions')[0]]",
+      "tags": {
+        "displayName": "monitoring"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region1'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/applicationGateways/','splunk-appg-region1')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways','splunk-appg-region1'), '/backendAddressPools/monitoringConsoleBackendPool')]"
+                }
+              ],
+              "publicIPAddress": "[if(parameters('monitoringPip'), variables('monitoringPipId'), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region1'), variables('managementSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('indexer', copyindex())]",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "indexerniccopy",
+        "count": "[parameters('numberOfIndexers')]"
+      },
+      "tags": {
+        "displayName": "indexer"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('indexerPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('indexer', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)), variables('indexerSubnetName'))]"
+              },
+              "loadBalancerBackendAddressPools": "[if(parameters('deployHEC'), json(concat('[{\"id\":', '\"', concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-hec-region', add(mod(copyIndex(0),2),1))), '/backendAddressPools/LoadBalancerBackEndPool1'), '\"}]')), json('null'))]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('sh', copyindex())]",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "shniccopy",
+        "count": "[parameters('numberOfSearchHeads')]"
+      },
+      "tags": {
+        "displayName": "sh"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/applicationGateways/', 'splunk-appg-region', add(mod(copyIndex(0),2),1))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', concat('splunk-appg-region', add(mod(copyIndex(0),2),1))), '/backendAddressPools/searchHeadBackendPool')]"
+                }
+              ],
+              "publicIPAddress": "[if(parameters('shPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('sh', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)), variables('searchSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('hf', copyindex())]",
+      "condition": "[parameters('deployHeavyForwarders')]",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "forwarderniccopy",
+        "count": "[parameters('numberOfForwarders')]"
+      },
+      "tags": {
+        "displayName": "hf"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "publicIPAddress": "[if(parameters('hfPip'), json(concat('{\"id\":', '\"', resourceId('Microsoft.Network/publicIPAddresses', concat('hf', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)), variables('forwarderSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('syslog', copyindex())]",
+      "condition": "[parameters('deploySyslogReceivers')]",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "syslogniccopy",
+        "count": "[parameters('numberOfSyslogRecievers')]"
+      },
+      "tags": {
+        "displayName": "syslog"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "loadBalancerBackendAddressPools": [
+                  "[if(parameters('syslogLbPip'), variables('syslogLbBep')[copyIndex()], concat(variables('syslogLbBep')[copyIndex()], ',', variables('syslogOutboundLbBep')[copyIndex()]))]"
+                ],
+              "publicIPAddress": "[if(parameters('syslogPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('syslog', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)), variables('forwarderSubnetName'))]"
               }
             }
           }

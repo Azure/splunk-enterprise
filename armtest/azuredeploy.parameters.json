@@ -2,6 +2,12 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "primaryRegion": {
+            "value": "uksouth" 
+        },
+        "secondaryRegion": {
+            "value": "ukwest"
+        },
         "linuxSSHKey": {
             "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDFecwMT3w1IGJigi0WzGlOe2siByNbq5OLiKeT1ZjDayRvr9IWKXHrNcKxbzzZDkz62jzQbs5EhQHyweOUHBP99nuDQENHF7RNnC0gM7DLfU1A998W1K/MiEvU9H0+1nk5suwJ0b6elElwkpMpKRsKcbokDjDXuTbcSJQDJQEjXAX6NJGOPQ1cJVDa61/wEDmqAJaoWCumdV1OLtw2Kom+Kvjed3JWWg1wAK+asUSlIVStBbN2YkHJRC10MDMLmQ1yIw1Gof8HEXy3k3KWianPoXPvyBufsBrsontJOQ2fi6+XvZg8w9eZlK0tyYQl9e0rWzNU/akVf0EEeuvtX1j1"
         },
@@ -174,7 +180,7 @@
             "value": "splunk.azure"
         },
         "clusterMasterPip": {
-            "value": true
+            "value": false
         },
         "licenseMasterPip": {
             "value": true
@@ -205,9 +211,6 @@
         },
         "syslogLbPip": {
             "value": false
-        },
-        "secondaryRegion": {
-            "value": "ukwest"
         }
     }
 }
