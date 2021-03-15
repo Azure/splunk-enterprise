@@ -25,14 +25,14 @@
       }
     },
     "virtualNetworkAddressPrefixRegion1": {
-      "defaultValue": ["10.0.0.0/16"],
+      "defaultValue": [ "10.0.0.0/16" ],
       "type": "array",
       "metadata": {
         "description": "Region 1 VNET address space."
       }
     },
     "virtualNetworkAddressPrefixRegion2": {
-      "defaultValue": ["10.1.0.0/16"],
+      "defaultValue": [ "10.1.0.0/16" ],
       "type": "array",
       "metadata": {
         "description": "Region 2 VNET address space."
@@ -365,7 +365,7 @@
     "vmPriority": {
       "type": "string",
       "defaultValue": "Regular",
-      "allowedValues": ["Regular", "Spot"],
+      "allowedValues": [ "Regular", "Spot" ],
       "metadata": {
         "description": "Priority for all VMs"
       }
@@ -408,7 +408,7 @@
     "coldStorageTier": {
       "type": "string",
       "defaultValue": "Standard_LRS",
-      "allowedValues": ["Standard_LRS", "StandardSSD_LRS", "Premium_LRS"],
+      "allowedValues": [ "Standard_LRS", "StandardSSD_LRS", "Premium_LRS" ],
       "metadata": {
         "description": "Storage tier for cold volume attached disk"
       }
@@ -506,6 +506,12 @@
     "managementSubnetName": "management",
     "forwarderSubnetName": "forwarders",
     "dnsZoneName": "splunk.azure",
+    "downloadRoot": "[parameters('downloadRoot')]",
+    "installScriptPath": "[concat(variables('downloadRoot'), '/scripts/common/install.sh')]",
+    "syslogInstallScriptPath": "[concat(variables('downloadRoot'), '/scripts/syslog/install.sh')]",
+    "configPath": "[concat(variables('downloadRoot'), '/config')]",
+    "splunkDownload": "[parameters('splunkBlobUrl')]",
+    "splunkUfDownload": "[parameters('splunkUfBlobUrl')]",
     "resgpguid": "[substring(replace(guid(resourceGroup().id), '-', ''), 0, 4)]",
     "dsLbFrontEnd": "[if(parameters('dsLbPip'), variables('publicDsLbFrontend'), variables('privateDsLbFrontend'))]",
     "publicDsLbFrontend": {
@@ -583,15 +589,15 @@
         "name": "syslogOutboundLbBep",
         "count": 2,
         "input": {
-            "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog-region', copyIndex('syslogOutboundLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
-          }
+          "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog-region', copyIndex('syslogOutboundLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+        }
       },
       {
         "name": "syslogLbBep",
         "count": 2,
         "input": {
-            "id": "[concat(resourceId('Microsoft.Network/loadBalancers',concat('loadBalancer-syslog-region', copyIndex('syslogLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
-          }
+          "id": "[concat(resourceId('Microsoft.Network/loadBalancers',concat('loadBalancer-syslog-region', copyIndex('syslogLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+        }
       }
     ],
     "dsOutboundLbBep": [
@@ -875,7 +881,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "GatewayManager",
-              "destinationPortRanges": ["443", "4443"],
+              "destinationPortRanges": [ "443", "4443" ],
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 120,
@@ -901,7 +907,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": ["22", "3389"],
+              "destinationPortRanges": [ "22", "3389" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 105,
@@ -914,7 +920,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": ["8080", "5701"],
+              "destinationPortRanges": [ "8080", "5701" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -940,7 +946,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": ["8080", "5701"],
+              "destinationPortRanges": [ "8080", "5701" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -953,7 +959,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": ["443", "80"],
+              "destinationPortRanges": [ "443", "80" ],
               "destinationAddressPrefix": "AzureCloud",
               "access": "Allow",
               "priority": 120,
@@ -1444,7 +1450,7 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": ["[variables('dsLbFrontEnd')]"],
+        "frontendIPConfigurations": [ "[variables('dsLbFrontEnd')]" ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -2389,6 +2395,96 @@
           }
         ]
       }
+    },
+    {
+      "name": "clustermaster",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[0]]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('cmSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "clustermaster-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('clustermaster-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "clustermaster",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'clustermaster')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[parameters('azureRegions')[0]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'clustermaster')]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone 1 --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
     }
   ],
   "outputs": {
