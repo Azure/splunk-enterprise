@@ -505,6 +505,9 @@
     "searchSubnetName": "search",
     "managementSubnetName": "management",
     "forwarderSubnetName": "forwarders",
+    "isL": "[contains(parameters('indexerSku'), '_L')]",
+    "vmType": "[if(variables('isL'), 'lv2disks', 'otherdisks')]",
+    "splunkAppDiskSizeGb": 512,
     "dnsZoneName": "splunk.azure",
     "downloadRoot": "[parameters('downloadRoot')]",
     "installScriptPath": "[concat(variables('downloadRoot'), '/scripts/common/install.sh')]",
@@ -513,6 +516,24 @@
     "splunkDownload": "[parameters('splunkBlobUrl')]",
     "splunkUfDownload": "[parameters('splunkUfBlobUrl')]",
     "resgpguid": "[substring(replace(guid(resourceGroup().id), '-', ''), 0, 4)]",
+    "ubuntu1804": {
+      "publisher": "Canonical",
+      "offer": "UbuntuServer",
+      "sku": "18.04-LTS",
+      "version": "latest"
+    },
+    "centos77": {
+      "publisher": "OpenLogic",
+      "offer": "CentOS",
+      "sku": "7.7",
+      "version": "latest"
+    },
+    "rhel76payg": {
+      "publisher": "RedHat",
+      "offer": "RHEL",
+      "sku": "7.6",
+      "version": "latest"
+    },
     "dsLbFrontEnd": "[if(parameters('dsLbPip'), variables('publicDsLbFrontend'), variables('privateDsLbFrontend'))]",
     "publicDsLbFrontend": {
       "name": "LoadBalancerFrontEnd",
@@ -630,7 +651,56 @@
     },
     "monitoringPipId": {
       "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'monitoring')]"
-    }
+    },
+    "lv2disks": [
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 1,
+        "diskSizeGB": "[parameters('coldDiskSize')]",
+        "managedDisk": {
+          "storageAccountType": "[parameters('coldStorageTier')]"
+        }
+      },
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 0,
+        "diskSizeGB": "[variables('splunkAppDiskSizeGb')]",
+        "managedDisk": {
+          "storageAccountType": "Premium_LRS"
+        }
+      }
+    ],
+    "otherdisks": [
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 1,
+        "diskSizeGB": "[parameters('coldDiskSize')]",
+        "managedDisk": {
+          "storageAccountType": "[parameters('coldStorageTier')]"
+        }
+      },
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 2,
+        "diskSizeGB": "[parameters('hotDiskSize')]",
+        "managedDisk": {
+          "storageAccountType": "Premium_LRS"
+        }
+      },
+      {
+        "caching": "None",
+        "createOption": "Empty",
+        "lun": 0,
+        "diskSizeGB": "[variables('splunkAppDiskSizeGb')]",
+        "managedDisk": {
+          "storageAccountType": "Premium_LRS"
+        }
+      }
+    ]
   },
   "resources": [
     {
@@ -2481,6 +2551,762 @@
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone 1 --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "licensemaster",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[0]]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'licensemaster')]"
+      ],
+      "properties": {
+        "priority": "[parameters('vmPriority')]",
+        "hardwareProfile": {
+          "vmSize": "[parameters('licenseMasterSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "license-master-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('license-master-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "licensemaster",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[parameters('azureRegions')[0]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone 1 --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-file \"', parameters('licenseFile'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('indexer', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "indexercopy",
+        "count": "[parameters('numberOfIndexers')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'indexer', copyindex())]"
+      ],
+      "tags": {
+        "displayName": "indexer"
+      },
+      "properties": {
+        "priority": "[parameters('vmPriority')]",
+        "hardwareProfile": {
+          "vmSize": "[parameters('indexerSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('indexer', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": "[variables(variables('vmType'))]"
+        },
+        "osProfile": {
+          "computerName": "[concat('indexer', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('indexer', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'indexer', copyindex())]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role indexer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', add(mod(copyIndex(0),2),1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --indexer-pipelines ', parameters('indexerPipelines'), ' --vm-sku ', parameters('indexerSku'), ' --dns-zone ', variables('dnsZoneName'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('sh', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "shcopy",
+        "count": "[parameters('numberOfSearchHeads')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'sh', copyindex())]"
+      ],
+      "tags": {
+        "displayName": "sh"
+      },
+      "properties": {
+        "priority": "[parameters('vmPriority')]",
+        "hardwareProfile": {
+          "vmSize": "[parameters('searchHeadSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('sh', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('sh', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('sh', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('sh', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'sh', copyindex())]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role search-head --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', add(mod(copyIndex(0),2),1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --sh-instance ', copyindex(), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('hf', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "condition": "[parameters('deployHeavyForwarders')]",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "hfcopy",
+        "count": "[parameters('numberOfForwarders')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'hf', copyindex())]"
+      ],
+      "tags": {
+        "displayName": "hf"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('hfSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('hf', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('hf', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('hf', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('hf', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "condition": "[parameters('deployHeavyForwarders')]",
+          "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'hf', copyindex())]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role heavy-forwarder --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --hf-pipelines ', parameters('hfPipelines'), ' --indexer-count ', parameters('numberOfIndexers'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('syslog', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "condition": "[parameters('deploySyslogReceivers')]",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "syslogcopy",
+        "count": "[parameters('numberOfSyslogReceivers')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'syslog', copyindex())]"
+      ],
+      "tags": {
+        "displayName": "syslog"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('syslogSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('syslog', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 512,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('syslog', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('syslog', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('syslog', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "condition": "[parameters('deploySyslogReceivers')]",
+          "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'syslog', copyindex())]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('syslogInstallScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role syslog-receiver --splunk-uf-url \"', variables('splunkUfDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('ds', copyindex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "dscopy",
+        "count": "[parameters('numberOfDeploymentServers')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'ds', copyindex())]"
+      ],
+      "tags": {
+        "displayName": "ds"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('deploymentServerSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "[concat('ds', copyindex(), '-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('ds', copyindex(), '-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat('ds', copyindex())]",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('ds', copyindex()))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'ds', copyindex())]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role deployment-server --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --indexer-count ', parameters('numberOfIndexers'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "shd",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[0]]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+      ],
+      "tags": {
+        "displayName": "shd"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('shdSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "shd-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('shd-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "shd",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'shd')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[parameters('azureRegions')[0]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'shd')]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role search-head-deployer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone 1 --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --indexer-count ', parameters('numberOfIndexers'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'), ' --dns-zone ', variables('dnsZoneName'))]"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "monitoring",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('azureRegions')[0]]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'monitoring')]"
+      ],
+      "tags": {
+        "displayName": "monitoring"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('monitoringConsoleSku')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables(parameters('vmImage')).publisher]",
+            "offer": "[variables(parameters('vmImage')).offer]",
+            "sku": "[variables(parameters('vmImage')).sku]",
+            "version": "[variables(parameters('vmImage')).version]"
+          },
+          "osDisk": {
+            "name": "monitoring-OSDisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "diskSizeGB": 64,
+            "osType": "Linux",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          },
+          "dataDisks": [
+            {
+              "name": "[concat('monitoring-DataDisk')]",
+              "caching": "ReadWrite",
+              "createOption": "Empty",
+              "lun": 0,
+              "diskSizeGB": 1023,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "monitoring",
+          "adminUsername": "[parameters('linuxUserName')]",
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "[concat('/home/', parameters('linuxUsername'), '/.ssh/authorized_keys')]",
+                  "keyData": "[parameters('linuxSSHKey')]"
+                }
+              ]
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'monitoring')]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "apiVersion": "2019-07-01",
+          "type": "extensions",
+          "name": "config-app",
+          "location": "[parameters('azureRegions')[0]]",
+          "dependsOn": [
+            "[concat('Microsoft.Compute/virtualMachines/', 'monitoring')]",
+            "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]",
+            "[resourceId('Microsoft.Network/networkInterfaces','shd')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','licensemaster','config-app')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','shd','config-app')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','sh0','config-app')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions','ds0','config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [ "[variables('installScriptPath')]" ]
+            },
+            "protectedSettings": {
+              "commandToExecute": "[concat('sudo bash install.sh --role monitoring-console --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --deploy-heavy-forwarders ', parameters('deployHeavyForwarders'), ' --heavy-forwarder-count ', parameters('numberOfForwarders'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
             }
           }
         }
