@@ -119,7 +119,7 @@
         "numberOfForwarders": {
             "value": 3
         },
-        "numberOfSyslogRecievers": {
+        "numberOfSyslogReceivers": {
             "value": 3
         },
         "hfSku": {
@@ -201,13 +201,13 @@
             "value": true
         },
         "syslogPip": {
-            "value": true
+            "value": false
         },
         "dsPip": {
-            "value": true
+            "value": false
         },
         "dsLbPip": {
-            "value": true
+            "value": false
         },
         "syslogLbPip": {
             "value": false

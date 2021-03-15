@@ -278,7 +278,7 @@
         "description": "Number of Heavy Forwarder VMs"
       }
     },
-    "numberOfSyslogRecievers": {
+    "numberOfSyslogReceivers": {
       "type": "int",
       "defaultValue": 3,
       "metadata": {
@@ -527,7 +527,7 @@
     },
     "syslogLbFrontEnd": "[if(parameters('syslogLbPip'), variables('publicSyslogLbFrontend'), variables('privateSyslogLbFrontend'))]",
     "hecLbFrontEnd": "[if(parameters('hecPublicIp'), variables('publicHecLbFrontend'), variables('privateHecLbFrontend'))]",
-    "syslogNicBep": "[if(parameters('syslogLbPip'), variables('syslogLbBep'), concat(variables('syslogLbBep'), ',', variables('syslogOutboundLbBep')))]",
+    "syslogNicBep": "[if(or(parameters('syslogLbPip'), parameters('syslogPip')), variables('syslogLbBep'), concat(variables('syslogLbBep'), variables('syslogOutboundLbBep')))]",
     "copy": [
       {
         "name": "publicSyslogLbFrontend",
@@ -583,17 +583,28 @@
         "name": "syslogOutboundLbBep",
         "count": 2,
         "input": {
-            "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog-region', copyIndex('syslogOutboundLbBep'))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+            "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-syslog-region', copyIndex('syslogOutboundLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
           }
       },
       {
         "name": "syslogLbBep",
         "count": 2,
         "input": {
-            "id": "[concat(resourceId('Microsoft.Network/loadBalancers',concat('loadBalancer-syslog-region', copyIndex('syslogLbBep'))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+            "id": "[concat(resourceId('Microsoft.Network/loadBalancers',concat('loadBalancer-syslog-region', copyIndex('syslogLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
           }
       }
     ],
+    "dsOutboundLbBep": [
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-outbound-ds'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      }
+    ],
+    "dsLbBep": [
+      {
+        "id": "[concat(resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds'), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+      }
+    ],
+    "dsNicBep": "[if(or(parameters('dsLbPip'), parameters('dsPip')), array(variables('dsLbBep')), union(array(variables('dsLbBep')), array(variables('dsOutboundLbBep'))))]",
     "appGWIpVar1Region1": "[first(split(parameters('appGSubnetAddressPrefixRegion1'), '/'))]",
     "appGWIpVar2Region1": "[split(variables('appGWIpVar1Region1'), '.')]",
     "appGwIpVar3Region1": "[add(int(variables('appGWIpVar2Region1')[3]), 4)]",
@@ -1196,7 +1207,7 @@
       },
       "copy": {
         "name": "syslogpipcopy",
-        "count": "[parameters('numberOfSyslogRecievers')]"
+        "count": "[parameters('numberOfSyslogReceivers')]"
       },
       "tags": {
         "displayName": "[concat('syslog', copyindex())]"
@@ -1492,7 +1503,7 @@
             "name": "LoadBalancerOutboundFrontEnd",
             "properties": {
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('syslogOutboundlbRegion', copyIndex(1)))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'dsOutboundlb')]"
               }
             }
           }
@@ -2313,7 +2324,7 @@
       "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
       "copy": {
         "name": "syslogniccopy",
-        "count": "[parameters('numberOfSyslogRecievers')]"
+        "count": "[parameters('numberOfSyslogReceivers')]"
       },
       "tags": {
         "displayName": "syslog"
@@ -2328,9 +2339,7 @@
           {
             "name": "ipconfig1",
             "properties": {
-              "loadBalancerBackendAddressPools": [
-                  "[if(parameters('syslogLbPip'), variables('syslogLbBep')[copyIndex()], concat(variables('syslogLbBep')[copyIndex()], ',', variables('syslogOutboundLbBep')[copyIndex()]))]"
-                ],
+              "loadBalancerBackendAddressPools": "[if(or(parameters('syslogLbPip'), parameters('syslogPip')), array(variables('syslogLbBep')[mod(copyIndex(0),2)]), union(array(variables('syslogLbBep')[mod(copyIndex(0),2)]), array(variables('syslogOutboundLbBep')[mod(copyIndex(0),2)])))]",
               "publicIPAddress": "[if(parameters('syslogPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('syslog', copyIndex())),'\"}')), json('null'))]",
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
@@ -2340,7 +2349,48 @@
           }
         ]
       }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('ds', copyindex())]",
+      "location": "[parameters('azureRegions')[0]]",
+      "copy": {
+        "name": "dsniccopy",
+        "count": "[parameters('numberOfDeploymentServers')]"
+      },
+      "tags": {
+        "displayName": "ds"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', concat(variables('vnetNamePrefix'), 'Region1'))]",
+        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
+        "[concat('Microsoft.Network/applicationGateways/','splunk-appg-region1')]",
+        "[concat('Microsoft.Network/loadBalancers/', 'loadBalancer-ds')]"
+      ],
+      "properties": {
+        "enableAcceleratedNetworking": true,
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "applicationGatewayBackendAddressPools": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', 'splunk-appg-region1'), '/backendAddressPools/deploymentServerBackendPool')]"
+                }
+              ],
+              "loadBalancerBackendAddressPools": "[variables('dsNicBep')]",
+              "publicIPAddress": "[if(parameters('dsPip'), json(concat('{\"id\":', '\"',resourceId('Microsoft.Network/publicIPAddresses', concat('ds', copyIndex())),'\"}')), json('null'))]",
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region1'), variables('managementSubnetName'))]"
+              }
+            }
+          }
+        ]
+      }
     }
   ],
-  "outputs": {}
+  "outputs": {
+  }
 }
