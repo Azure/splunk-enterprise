@@ -554,7 +554,6 @@
     },
     "syslogLbFrontEnd": "[if(parameters('syslogLbPip'), variables('publicSyslogLbFrontend'), variables('privateSyslogLbFrontend'))]",
     "hecLbFrontEnd": "[if(parameters('hecPublicIp'), variables('publicHecLbFrontend'), variables('privateHecLbFrontend'))]",
-    "syslogNicBep": "[if(or(parameters('syslogLbPip'), parameters('syslogPip')), variables('syslogLbBep'), concat(variables('syslogLbBep'), variables('syslogOutboundLbBep')))]",
     "copy": [
       {
         "name": "publicSyslogLbFrontend",
@@ -618,6 +617,20 @@
         "count": 2,
         "input": {
           "id": "[concat(resourceId('Microsoft.Network/loadBalancers',concat('loadBalancer-syslog-region', copyIndex('syslogLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+        }
+      },
+      {
+        "name": "hecOutboundLbBep",
+        "count": 2,
+        "input": {
+          "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-hec-region', copyIndex('hecOutboundLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
+        }
+      },
+      {
+        "name": "hecLbBep",
+        "count": 2,
+        "input": {
+          "id": "[concat(resourceId('Microsoft.Network/loadBalancers',concat('loadBalancer-hec-region', copyIndex('hecLbBep', 1))), '/backendAddressPools/LoadBalancerBackEndPool1')]"
         }
       }
     ],
@@ -1405,6 +1418,30 @@
     },
     {
       "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "name": "[concat('hecOutboundLbRegion', copyIndex(1))]",
+      "condition": "[and(parameters('deployHEC'), not(or(parameters('HECPublicIp'), parameters('indexerPip'))))]",
+      "location": "[parameters('azureRegions')[copyindex()]]",
+      "copy": {
+        "count": 2,
+        "mode": "Parallel",
+        "name": "hecoutboundpipcopy"
+      },
+      "sku": {
+        "name": "Standard"
+      },
+      "tags": {
+        "displayName": "hecoutboundlb"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(parameters('dnsPrefix'), '-hec-outbound-', variables('resgpguid'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
       "condition": "[parameters('dsLbPip')]",
       "apiVersion": "2020-05-01",
       "name": "dslb",
@@ -1445,7 +1482,7 @@
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2020-05-01",
       "name": "[concat('syslogOutboundlbRegion', copyIndex(1))]",
-      "condition": "[not(parameters('syslogLbPip'))]",
+      "condition": "[and(parameters('deploySyslogReceivers'), not(or(parameters('syslogLbPip'), parameters('syslogPip'))))]",
       "location": "[parameters('azureRegions')[copyindex()]]",
       "copy": {
         "count": 2,
@@ -1671,7 +1708,7 @@
     {
       "apiVersion": "2020-05-01",
       "name": "[concat('loadBalancer-outbound-syslog-region', copyIndex(1))]",
-      "condition": "[and(parameters('deploySyslogReceivers'), not(parameters('syslogLbPip')))]",
+      "condition": "[and(parameters('deploySyslogReceivers'), not(or(parameters('syslogLbPip'), parameters('syslogPip'))))]",
       "type": "Microsoft.Network/loadBalancers",
       "location": "[parameters('azureRegions')[copyindex()]]",
       "copy": {
@@ -1776,6 +1813,57 @@
               "intervalInSeconds": 5,
               "numberOfProbes": 2,
               "requestPath": "/services/collector/health/1.0"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2020-05-01",
+      "name": "[concat('loadBalancer-outbound-hec-region', copyIndex(1))]",
+      "condition": "[and(parameters('deployHEC'), not(or(parameters('HECPublicIp'), parameters('indexerPip'))))]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[parameters('azureRegions')[copyindex()]]",
+      "copy": {
+        "count": 2,
+        "mode": "Parallel",
+        "name": "hecoutboundlbcopy"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', concat(variables('vnetNamePrefix'), 'Region', copyIndex(1)))]"
+      ],
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "LoadBalancerOutboundFrontEnd",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('hecOutboundlbRegion', copyIndex(1)))]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "LoadBalancerBackEndPool1"
+          }
+        ],
+        "outboundRules": [
+          {
+            "name": "OutboundRule1",
+            "properties": {
+              "frontendIPConfigurations": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-hec-region', copyIndex(1))),'/frontendIPConfigurations/LoadBalancerOutboundFrontEnd')]"
+                }
+              ],
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-outbound-hec-region', copyIndex(1))),'/backendAddressPools/LoadBalancerBackEndPool1')]"
+              },
+              "protocol": "tcp"
             }
           }
         ]
@@ -2315,7 +2403,7 @@
               "subnet": {
                 "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)), variables('indexerSubnetName'))]"
               },
-              "loadBalancerBackendAddressPools": "[if(parameters('deployHEC'), json(concat('[{\"id\":', '\"', concat(resourceId('Microsoft.Network/loadBalancers', concat('loadBalancer-hec-region', add(mod(copyIndex(0),2),1))), '/backendAddressPools/LoadBalancerBackEndPool1'), '\"}]')), json('null'))]"
+              "loadBalancerBackendAddressPools": "[if(or(parameters('hecPublicIp'), parameters('indexerPip')), array(variables('hecLbBep')[mod(copyIndex(0),2)]), union(array(variables('hecLbBep')[mod(copyIndex(0),2)]), array(variables('hecOutboundLbBep')[mod(copyIndex(0),2)])))]"
             }
           }
         ]

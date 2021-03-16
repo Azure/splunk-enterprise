@@ -259,7 +259,7 @@ sed -i "s/##SECRET##/$PASS4SYMMKEY/g" $SPLUNKLOCAL/server.conf
 sed -i "s/##HOSTNAME##/$HOSTNAME/g" $SPLUNKLOCAL/server.conf
 
 # Construct indexer list for Deployment Server, Search Head Deployer and Heavy Forwarders
-if [ "$ROLE" = "deployment-server" ] || [ "$ROLE" = "search-head-deployer" ]; then
+if [ "$ROLE" = "deployment-server" ] || [ "$ROLE" = "search-head-deployer" ] || [ "$ROLE" = "heavy-forwarder" ]; then
     INDEXERCOUNT=$(($INDEXERCOUNT - 1))
     INDEXERLIST=indexer0.$DNSZONE:9997
     if test $INDEXERCOUNT -gt 0; then
