@@ -320,7 +320,7 @@ case "$ROLE" in
         ;;
     license-master )
         mkdir -p $SPLUNKHOME/etc/licenses/enterprise
-        echo $LICENSEFILE | base64 -d > $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic
+        echo $LICENSEFILE | base64 -di > $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic
         ;;
     search-head-deployer )
         mkdir -p $SPLUNKHOME/etc/shcluster/apps/default_outputs/local
