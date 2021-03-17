@@ -381,8 +381,7 @@
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
                 "Standard_D16ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 1
+              ]
             },
             "options": {
               "hideDiskTypeFilter": true
@@ -455,8 +454,7 @@
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
                 "Standard_D16ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 3
+              ]
             },
             "options": {
               "hideDiskTypeFilter": true
@@ -678,8 +676,7 @@
                 "Standard_D16ds_v4",
                 "Standard_D32ds_v4",
                 "Standard_D64ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 3
+              ]
             },
             "options": {
               "hideDiskTypeFilter": true
@@ -928,8 +925,7 @@
                 "Standard_D16ds_v4",
                 "Standard_D32ds_v4",
                 "Standard_D64ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 3
+              ]
             },
             "options": {
               "hideDiskTypeFilter": true
@@ -1077,8 +1073,7 @@
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
                 "Standard_D16ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 3
+              ]
             },
             "options": {
               "hideDiskTypeFilter": true
@@ -1183,8 +1178,7 @@
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
                 "Standard_D16ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 3
+              ]
             },
             "options": {
               "hideDiskTypeFilter": true
