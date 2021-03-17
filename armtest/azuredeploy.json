@@ -2231,6 +2231,48 @@
       }
     },
     {
+      "name": "searchTrafficManagerProfile",
+      "type": "Microsoft.Network/trafficManagerProfiles",
+      "apiVersion": "2018-04-01",
+      "tags": {
+      },
+      "location": "global",
+      "properties": {
+        "profileStatus": "Enabled",
+        "trafficRoutingMethod": "Performance",
+        "dnsConfig": {
+          "relativeName": "[concat('splunk-search-', variables('resgpguid'))]",
+          "ttl": 30
+        },
+        "monitorConfig": {
+          "protocol": "HTTP",
+          "port": 80,
+          "path": "/en-GB/account/login",
+          "intervalInSeconds": 30,
+          "timeoutInSeconds": 5,
+          "toleratedNumberOfFailures": 3
+        },
+        "endpoints": [
+          {
+            "name": "Region1",
+            "type": "Microsoft.Network/trafficManagerProfiles/azureEndpoints",
+            "properties": {
+              "targetResourceId": "[resourceId('Microsoft.Network/publicIPAddresses', 'appgRegion1')]",
+              "endpointStatus": "Enabled"
+            }
+          },
+          {
+            "name": "Region2",
+            "type": "Microsoft.Network/trafficManagerProfiles/azureEndpoints",
+            "properties": {
+              "targetResourceId": "[resourceId('Microsoft.Network/publicIPAddresses', 'appgRegion2')]",
+              "endpointStatus": "Enabled"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "bastion",
       "condition": "[parameters('deployBastion')]",
       "type": "Microsoft.Network/bastionHosts",
