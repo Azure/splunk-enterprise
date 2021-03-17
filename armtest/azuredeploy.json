@@ -2622,6 +2622,62 @@
       "properties": {
         "platformUpdateDomainCount": "[parameters('numberOfUpdateDomains')]",
         "platformFaultDomainCount": "[parameters('numberOfFaultDomains')]"
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "name": "[concat('shAvailabilitySetRegion', copyindex(1))]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2020-06-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "shavailabilitysetcopy",
+        "count": 2
+      },
+      "properties": {
+        "platformUpdateDomainCount": "[parameters('numberOfUpdateDomains')]",
+        "platformFaultDomainCount": "[parameters('numberOfFaultDomains')]"
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "name": "[concat('hfAvailabilitySetRegion', copyindex(1))]",
+      "condition": "[parameters('deployHeavyForwarders')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2020-06-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "hfavailabilitysetcopy",
+        "count": 2
+      },
+      "properties": {
+        "platformUpdateDomainCount": "[parameters('numberOfUpdateDomains')]",
+        "platformFaultDomainCount": "[parameters('numberOfFaultDomains')]"
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    },
+    {
+      "name": "[concat('syslogAvailabilitySetRegion', copyindex(1))]",
+      "condition": "[parameters('deploySyslogReceivers')]",
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2020-06-01",
+      "location": "[parameters('azureRegions')[mod(copyIndex(0),2)]]",
+      "copy": {
+        "name": "syslogavailabilitysetcopy",
+        "count": 2
+      },
+      "properties": {
+        "platformUpdateDomainCount": "[parameters('numberOfUpdateDomains')]",
+        "platformFaultDomainCount": "[parameters('numberOfFaultDomains')]"
+      },
+      "sku": {
+        "name": "Aligned"
       }
     },
     {
@@ -2630,7 +2686,7 @@
       "apiVersion": "2019-07-01",
       "location": "[parameters('azureRegions')[0]]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2720,7 +2776,7 @@
       "apiVersion": "2019-07-01",
       "location": "[parameters('azureRegions')[0]]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'licensemaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', 'licensemaster')]"
       ],
       "properties": {
         "priority": "[parameters('vmPriority')]",
@@ -2814,7 +2870,8 @@
         "count": "[parameters('numberOfIndexers')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'indexer', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', concat('indexer', copyindex()))]",
+        "[resourceId('Microsoft.Compute/availabilitySets', concat('indexerAvailabilitySetRegion', add(mod(copyIndex(0),2), 1)))]"
       ],
       "tags": {
         "displayName": "indexer"
@@ -2903,12 +2960,16 @@
         "count": "[parameters('numberOfSearchHeads')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'sh', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', concat('sh', copyindex()))]",
+        "[resourceId('Microsoft.Compute/availabilitySets', concat('shAvailabilitySetRegion', add(mod(copyIndex(0),2), 1)))]"
       ],
       "tags": {
         "displayName": "sh"
       },
       "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', concat('shAvailabilitySetRegion', add(mod(copyIndex(0),2), 1)))]"
+        },
         "priority": "[parameters('vmPriority')]",
         "hardwareProfile": {
           "vmSize": "[parameters('searchHeadSku')]"
@@ -3001,12 +3062,16 @@
         "count": "[parameters('numberOfForwarders')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'hf', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', concat('hf', copyindex()))]",
+        "[resourceId('Microsoft.Compute/availabilitySets', concat('hfAvailabilitySetRegion', add(mod(copyIndex(0),2), 1)))]"
       ],
       "tags": {
         "displayName": "hf"
       },
       "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', concat('hfAvailabilitySetRegion', add(mod(copyIndex(0),2), 1)))]"
+        },
         "hardwareProfile": {
           "vmSize": "[parameters('hfSku')]"
         },
@@ -3099,12 +3164,16 @@
         "count": "[parameters('numberOfSyslogReceivers')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'syslog', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', concat('syslog', copyindex()))]",
+        "[resourceId('Microsoft.Compute/availabilitySets', concat('syslogAvailabilitySetRegion', add(mod(copyIndex(0),2), 1)))]"
       ],
       "tags": {
         "displayName": "syslog"
       },
       "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', concat('syslogAvailabilitySetRegion', add(mod(copyIndex(0),2), 1)))]"
+        },
         "hardwareProfile": {
           "vmSize": "[parameters('syslogSku')]"
         },
@@ -3196,7 +3265,7 @@
         "count": "[parameters('numberOfDeploymentServers')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'ds', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', concat('ds', copyindex()))]"
       ],
       "tags": {
         "displayName": "ds"
@@ -3288,7 +3357,7 @@
       "apiVersion": "2019-07-01",
       "location": "[parameters('azureRegions')[0]]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
       ],
       "tags": {
         "displayName": "shd"
@@ -3381,7 +3450,7 @@
       "apiVersion": "2019-07-01",
       "location": "[parameters('azureRegions')[0]]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'monitoring')]"
+        "[resourceId('Microsoft.Network/networkInterfaces/', 'monitoring')]"
       ],
       "tags": {
         "displayName": "monitoring"
