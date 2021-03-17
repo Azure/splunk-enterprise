@@ -2459,7 +2459,7 @@
               "subnet": {
                 "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', concat(variables('vnetNamePrefix'), 'Region', add(mod(copyIndex(0),2),1)), variables('indexerSubnetName'))]"
               },
-              "loadBalancerBackendAddressPools": "[if(and(parameters('deployHEC'), or(parameters('hecPublicIp'), parameters('indexerPip'))), array(variables('hecLbBep')[mod(copyIndex(0),2)]), union(array(variables('hecLbBep')[mod(copyIndex(0),2)]), array(variables('hecOutboundLbBep')[mod(copyIndex(0),2)])))]"
+              "loadBalancerBackendAddressPools": "[if(parameters('deployHEC'), if(or(parameters('hecPublicIp'), parameters('indexerPip')), array(variables('hecLbBep')[mod(copyIndex(0),2)]), union(array(variables('hecLbBep')[mod(copyIndex(0),2)]), array(variables('hecOutboundLbBep')[mod(copyIndex(0),2)]))), json('null'))]"
             }
           }
         ]
