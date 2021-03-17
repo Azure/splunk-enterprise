@@ -3,7 +3,47 @@
   "handler": "Microsoft.Azure.CreateUIDef",
   "version": "0.1.2-preview",
   "parameters": {
-    "basics": [{}],
+    "basics": [
+      {
+        "name": "regionInfoBox",
+        "type": "Microsoft.Common.InfoBox",
+        "visible": true,
+        "options": {
+          "icon": "Info",
+          "text": "The region selected here is the Resource Group location only. Please select primary and secondary deployment regions below."
+        }
+      },
+      {
+        "name": "regionsApi",
+        "type": "Microsoft.Solutions.ArmApiControl",
+        "request": {
+          "method": "GET",
+          "path": "[concat(subscription().id, '/locations?api-version=2020-01-01')]"
+        }
+      },
+      {
+        "name": "primaryRegion",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Primary Region",
+        "toolTip": "The primary region for Splunk resources, including all single instance components such as Cluster Master, Monitoring Console.",
+        "constraints": {
+          "allowedValues": "[map(steps('basics').regionsApi.value, (item) => parse(concat('{\"label\":\"', item.displayName, '\",\"value\":\"', item.name, '\"}')))]",
+          "required": true
+        },
+        "visible": true
+      },
+      {
+        "name": "secondaryRegion",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Secondary Region",
+        "toolTip": "The secondary region for Splunk resources including all horizontally scalable components such as Indexers, Search Heads and Heavy Forwarders.",
+        "constraints": {
+          "allowedValues": "[map(steps('basics').regionsApi.value, (item) => parse(concat('{\"label\":\"', item.displayName, '\",\"value\":\"', item.name, '\"}')))]",
+          "required": true
+        },
+        "visible": true
+      }
+    ],
     "steps": [
       {
         "name": "nwConfig",
@@ -333,7 +373,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "License Master Server Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
+            "recommendedSizes": [
+              "Standard_D16ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
@@ -405,7 +447,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Deployment Server Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
+            "recommendedSizes": [
+              "Standard_D16ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
@@ -483,7 +527,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Monitoring Console VM Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
+            "recommendedSizes": [
+              "Standard_D16ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
@@ -545,7 +591,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Cluster Master Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
+            "recommendedSizes": [
+              "Standard_D16ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
@@ -617,7 +665,10 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Indexer Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_L64s_v2", "Standard_D64ds_v4"],
+            "recommendedSizes": [
+              "Standard_L64s_v2",
+              "Standard_D64ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_L16s_v2",
@@ -869,7 +920,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Search Head Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D64ds_v4"],
+            "recommendedSizes": [
+              "Standard_D64ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D16ds_v4",
@@ -916,7 +969,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Search Head Deployer Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
+            "recommendedSizes": [
+              "Standard_D16ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
@@ -1014,7 +1069,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Heavy Forwarder Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D8ds_v4"],
+            "recommendedSizes": [
+              "Standard_D8ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
@@ -1118,7 +1175,9 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Syslog Receiver Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D8ds_v4"],
+            "recommendedSizes": [
+              "Standard_D8ds_v4"
+            ],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
@@ -1238,6 +1297,8 @@
       }
     ],
     "outputs": {
+      "primaryRegion": "[steps('basics').primaryRegion]",
+      "secondaryRegion": "[steps('basics').secondaryRegion]",
       "linuxUserName": "[steps('osConfig').vmUserName]",
       "vmImage": "[steps('osConfig').vmImage]",
       "linuxSSHKey": "[steps('osConfig').vmSSHKey.sshPublicKey]",
