@@ -1,5 +1,7 @@
 ![Build Status](https://dev.azure.com/AZGlobal/Azure%20Global%20CAT%20Engineering/_apis/build/status/Azure.splunk-enterprise?branchName=main)
 
+__**NB: This branch deploys a regional Splunk deployment which deploys Splunk across 2 Azure regions and does not utilise Availability Zones. This is only recommended when the required Azure regions do not have Availability Zones. If this is not the case please use the main branch to take advantage of Availability Zones.**__
+
 # Introduction 
 This documentation provides detailed guidance to support the deployment of Splunk Enterprise on Azure in line with [Splunk Validated Architectures](https://www.splunk.com/pdfs/technical-briefs/splunk-validated-architectures.pdf) and the following key priorities:
 
