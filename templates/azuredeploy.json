@@ -2,8 +2,15 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for deployed Splunk resources"
+      }
+    },
     "virtualNetworkAddressPrefix": {
-      "defaultValue": ["192.168.0.0/16"],
+      "defaultValue": [ "192.168.0.0/16" ],
       "type": "array",
       "metadata": {
         "description": "VNET address space."
@@ -294,7 +301,7 @@
     "vmPriority": {
       "type": "string",
       "defaultValue": "Regular",
-      "allowedValues": ["Regular", "Spot"],
+      "allowedValues": [ "Regular", "Spot" ],
       "metadata": {
         "description": "Priority for all VMs"
       }
@@ -337,7 +344,7 @@
     "coldStorageTier": {
       "type": "string",
       "defaultValue": "Standard_LRS",
-      "allowedValues": ["Standard_LRS", "StandardSSD_LRS", "Premium_LRS"],
+      "allowedValues": [ "Standard_LRS", "StandardSSD_LRS", "Premium_LRS" ],
       "metadata": {
         "description": "Storage tier for cold volume attached disk"
       }
@@ -624,7 +631,7 @@
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-05-01",
       "name": "splunk",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
@@ -718,7 +725,7 @@
       "name": "bastion",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-05-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
@@ -740,7 +747,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "GatewayManager",
-              "destinationPortRanges": ["443", "4443"],
+              "destinationPortRanges": [ "443", "4443" ],
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 120,
@@ -766,7 +773,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": ["22", "3389"],
+              "destinationPortRanges": [ "22", "3389" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 105,
@@ -779,7 +786,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": ["8080", "5701"],
+              "destinationPortRanges": [ "8080", "5701" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -805,7 +812,7 @@
               "protocol": "*",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "VirtualNetwork",
-              "destinationPortRanges": ["8080", "5701"],
+              "destinationPortRanges": [ "8080", "5701" ],
               "destinationAddressPrefix": "VirtualNetwork",
               "access": "Allow",
               "priority": 110,
@@ -818,7 +825,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationPortRanges": ["443", "80"],
+              "destinationPortRanges": [ "443", "80" ],
               "destinationAddressPrefix": "AzureCloud",
               "access": "Allow",
               "priority": 120,
@@ -845,7 +852,7 @@
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-05-01",
       "name": "appg",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
@@ -911,7 +918,7 @@
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[variables('vnetName')]",
       "apiVersion": "2020-05-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', 'splunk')]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', 'appg')]",
@@ -1032,7 +1039,7 @@
       "condition": "[parameters('clusterMasterPip')]",
       "apiVersion": "2020-05-01",
       "name": "clustermaster",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1051,7 +1058,7 @@
       "condition": "[parameters('licenseMasterPip')]",
       "apiVersion": "2020-05-01",
       "name": "licensemaster",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1070,7 +1077,7 @@
       "condition": "[parameters('indexerPip')]",
       "apiVersion": "2020-05-01",
       "name": "[concat('indexer', copyindex())]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1093,7 +1100,7 @@
       "condition": "[parameters('shPip')]",
       "apiVersion": "2020-05-01",
       "name": "[concat('sh', copyindex())]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1116,7 +1123,7 @@
       "apiVersion": "2020-05-01",
       "name": "[concat('hf', copyindex())]",
       "condition": "[and(parameters('deployHeavyForwarders'), parameters('hfPip'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1139,7 +1146,7 @@
       "apiVersion": "2020-05-01",
       "name": "[concat('syslog', copyindex())]",
       "condition": "[and(parameters('deploySyslogReceivers'), parameters('syslogPip'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1162,7 +1169,7 @@
       "apiVersion": "2020-05-01",
       "condition": "[parameters('dsPip')]",
       "name": "[concat('ds', copyindex())]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1185,7 +1192,7 @@
       "condition": "[parameters('shdPip')]",
       "apiVersion": "2020-05-01",
       "name": "shd",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1204,7 +1211,7 @@
       "condition": "[parameters('monitoringPip')]",
       "apiVersion": "2020-05-01",
       "name": "monitoring",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1222,7 +1229,7 @@
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2020-05-01",
       "name": "appg",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1241,7 +1248,7 @@
       "apiVersion": "2020-05-01",
       "name": "hec",
       "condition": "[parameters('HECPublicIp')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -1259,7 +1266,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "name": "clustermaster",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "clustermaster"
       },
@@ -1292,7 +1299,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "name": "licensemaster",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "licensemaster"
       },
@@ -1319,7 +1326,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "name": "[concat('indexer', copyindex())]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "copy": {
         "name": "indexerniccopy",
         "count": "[parameters('numberOfIndexers')]"
@@ -1352,7 +1359,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "name": "[concat('sh', copyindex())]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "copy": {
         "name": "shniccopy",
         "count": "[parameters('numberOfSearchHeads')]"
@@ -1391,7 +1398,7 @@
       "apiVersion": "2020-05-01",
       "name": "[concat('hf', copyindex())]",
       "condition": "[parameters('deployHeavyForwarders')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "copy": {
         "name": "forwarderniccopy",
         "count": "[parameters('numberOfForwarders')]"
@@ -1424,7 +1431,7 @@
       "apiVersion": "2020-05-01",
       "name": "[concat('syslog', copyindex())]",
       "condition": "[parameters('deploySyslogReceivers')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "copy": {
         "name": "syslogniccopy",
         "count": "[parameters('numberOfSyslogRecievers')]"
@@ -1457,7 +1464,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "name": "[concat('ds', copyindex())]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "copy": {
         "name": "dsniccopy",
         "count": "[parameters('numberOfDeploymentServers')]"
@@ -1497,7 +1504,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "name": "shd",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "shd"
       },
@@ -1524,7 +1531,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "name": "monitoring",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "tags": {
         "displayName": "monitoring"
       },
@@ -1557,8 +1564,8 @@
       "name": "clustermaster",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
-      "zones": ["[variables('cmZone')]"],
+      "location": "[parameters('location')]",
+      "zones": [ "[variables('cmZone')]" ],
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
       ],
@@ -1623,7 +1630,7 @@
           "apiVersion": "2019-07-01",
           "type": "extensions",
           "name": "config-app",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'clustermaster')]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
@@ -1635,7 +1642,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/clustermaster', '2019-07-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
@@ -1648,8 +1655,8 @@
       "name": "licensemaster",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
-      "zones": ["[variables('licenseMasterZone')]"],
+      "location": "[parameters('location')]",
+      "zones": [ "[variables('licenseMasterZone')]" ],
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', 'licensemaster')]"
       ],
@@ -1715,7 +1722,7 @@
           "apiVersion": "2019-07-01",
           "type": "extensions",
           "name": "config-app",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'licensemaster')]",
             "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
@@ -1726,7 +1733,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/licensemaster', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-file \"', parameters('licenseFile'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
@@ -1739,7 +1746,7 @@
       "name": "[concat('indexer', copyindex())]",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
       "copy": {
         "name": "indexercopy",
@@ -1799,7 +1806,7 @@
           "apiVersion": "2019-07-01",
           "type": "extensions",
           "name": "config-app",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'indexer', copyindex())]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
@@ -1810,7 +1817,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role indexer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/indexer', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --indexer-pipelines ', parameters('indexerPipelines'), ' --vm-sku ', parameters('indexerSku'), ' --dns-zone ', variables('dnsZoneName'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
@@ -1823,7 +1830,7 @@
       "name": "[concat('sh', copyindex())]",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
       "copy": {
         "name": "shcopy",
@@ -1894,7 +1901,7 @@
           "apiVersion": "2019-07-01",
           "type": "extensions",
           "name": "config-app",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'sh', copyindex())]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
@@ -1905,7 +1912,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role search-head --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/sh', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --sh-instance ', copyindex(), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
@@ -1919,7 +1926,7 @@
       "type": "Microsoft.Compute/virtualMachines",
       "condition": "[parameters('deployHeavyForwarders')]",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
       "copy": {
         "name": "hfcopy",
@@ -1990,7 +1997,7 @@
           "type": "extensions",
           "name": "config-app",
           "condition": "[parameters('deployHeavyForwarders')]",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'hf', copyindex())]",
             "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
@@ -2001,7 +2008,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role heavy-forwarder --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --hf-pipelines ', parameters('hfPipelines'), ' --indexer-count ', parameters('numberOfIndexers'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
@@ -2015,7 +2022,7 @@
       "type": "Microsoft.Compute/virtualMachines",
       "condition": "[parameters('deploySyslogReceivers')]",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
       "copy": {
         "name": "syslogcopy",
@@ -2086,7 +2093,7 @@
           "type": "extensions",
           "name": "config-app",
           "condition": "[parameters('deploySyslogReceivers')]",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'syslog', copyindex())]",
             "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
@@ -2097,7 +2104,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('syslogInstallScriptPath')]"]
+              "fileUris": [ "[variables('syslogInstallScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role syslog-receiver --splunk-uf-url \"', variables('splunkUfDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'))]"
@@ -2110,7 +2117,7 @@
       "name": "[concat('ds', copyindex())]",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "zones": "[split(string(add(mod(copyIndex(),3),1)), ',')]",
       "copy": {
         "name": "dscopy",
@@ -2180,7 +2187,7 @@
           "apiVersion": "2019-07-01",
           "type": "extensions",
           "name": "config-app",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'ds', copyindex())]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
@@ -2191,7 +2198,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role deployment-server --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --indexer-count ', parameters('numberOfIndexers'))]"
@@ -2204,8 +2211,8 @@
       "name": "shd",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
-      "zones": ["[variables('shdZone')]"],
+      "location": "[parameters('location')]",
+      "zones": [ "[variables('shdZone')]" ],
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
       ],
@@ -2270,7 +2277,7 @@
           "apiVersion": "2019-07-01",
           "type": "extensions",
           "name": "config-app",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'shd')]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
@@ -2282,7 +2289,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role search-head-deployer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/shd', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --indexer-count ', parameters('numberOfIndexers'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'), ' --dns-zone ', variables('dnsZoneName'))]"
@@ -2295,8 +2302,8 @@
       "name": "monitoring",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
-      "location": "[resourceGroup().location]",
-      "zones": ["[variables('monitoringZone')]"],
+      "location": "[parameters('location')]",
+      "zones": [ "[variables('monitoringZone')]" ],
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', 'monitoring')]"
       ],
@@ -2361,7 +2368,7 @@
           "apiVersion": "2019-07-01",
           "type": "extensions",
           "name": "config-app",
-          "location": "[resourceGroup().location]",
+          "location": "[parameters('location')]",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', 'monitoring')]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
@@ -2378,7 +2385,7 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": ["[variables('installScriptPath')]"]
+              "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
               "commandToExecute": "[concat('sudo bash install.sh --role monitoring-console --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --deploy-heavy-forwarders ', parameters('deployHeavyForwarders'), ' --heavy-forwarder-count ', parameters('numberOfForwarders'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
@@ -2391,8 +2398,8 @@
       "type": "Microsoft.Network/applicationGateways",
       "apiVersion": "2020-05-01",
       "name": "splunk-appg",
-      "location": "[resourceGroup().location]",
-      "zones": ["1", "2", "3"],
+      "location": "[parameters('location')]",
+      "zones": [ "1", "2", "3" ],
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses/', 'appg')]",
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
@@ -2749,7 +2756,7 @@
       "condition": "[parameters('dsLbPip')]",
       "apiVersion": "2020-05-01",
       "name": "dslb",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -2768,7 +2775,7 @@
       "apiVersion": "2020-05-01",
       "name": "dsOutboundlb",
       "condition": "[not(parameters('dsLbPip'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -2787,7 +2794,7 @@
       "apiVersion": "2020-05-01",
       "name": "syslogOutboundlb",
       "condition": "[not(parameters('syslogLbPip'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -2806,7 +2813,7 @@
       "condition": "[parameters('syslogLbPip')]",
       "apiVersion": "2020-05-01",
       "name": "sysloglb",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
@@ -2824,7 +2831,7 @@
       "apiVersion": "2020-05-01",
       "name": "loadBalancer-ds",
       "type": "Microsoft.Network/loadBalancers",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
@@ -2832,7 +2839,7 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": ["[variables('dsLbFrontEnd')]"],
+        "frontendIPConfigurations": [ "[variables('dsLbFrontEnd')]" ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -2878,7 +2885,7 @@
       "name": "loadBalancer-outbound-ds",
       "condition": "[not(parameters('dsLbPip'))]",
       "type": "Microsoft.Network/loadBalancers",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
@@ -2924,7 +2931,7 @@
       "name": "loadBalancer-syslog",
       "condition": "[parameters('deploySyslogReceivers')]",
       "type": "Microsoft.Network/loadBalancers",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
@@ -2932,7 +2939,7 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": ["[variables('syslogLbFrontEnd')]"],
+        "frontendIPConfigurations": [ "[variables('syslogLbFrontEnd')]" ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -2978,7 +2985,7 @@
       "name": "loadBalancer-outbound-syslog",
       "condition": "[and(parameters('deploySyslogReceivers'), not(parameters('syslogLbPip')))]",
       "type": "Microsoft.Network/loadBalancers",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
@@ -3024,7 +3031,7 @@
       "name": "loadBalancer-hec",
       "type": "Microsoft.Network/loadBalancers",
       "condition": "[parameters('deployHEC')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
@@ -3032,7 +3039,7 @@
         "name": "Standard"
       },
       "properties": {
-        "frontendIPConfigurations": ["[variables('hecLbFrontEnd')]"],
+        "frontendIPConfigurations": [ "[variables('hecLbFrontEnd')]" ],
         "backendAddressPools": [
           {
             "name": "LoadBalancerBackEndPool1"
@@ -3079,7 +3086,7 @@
       "condition": "[parameters('deployBastion')]",
       "type": "Microsoft.Network/bastionHosts",
       "apiVersion": "2020-05-01",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', 'bastion')]",
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
@@ -3106,7 +3113,7 @@
       "condition": "[parameters('deployBastion')]",
       "apiVersion": "2020-05-01",
       "name": "bastion",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
       },
