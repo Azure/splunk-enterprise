@@ -2498,6 +2498,30 @@
               "Protocol": "Http",
               "CookieBasedAffinity": "Enabled"
             }
+          },
+          {
+            "name": "appGatewayCmBackendHttpSettings",
+            "properties": {
+              "Port": 8001,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled"
+            }
+          },
+          {
+            "name": "appGatewayDsBackendHttpSettings",
+            "properties": {
+              "Port": 8002,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled"
+            }
+          },
+          {
+            "name": "appGatewayMonitoringBackendHttpSettings",
+            "properties": {
+              "Port": 8003,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled"
+            }
           }
         ],
         "httpListeners": [
@@ -2648,7 +2672,7 @@
                 "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'monitoringConsoleBackendPool')]"
               },
               "backendHttpSettings": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayMonitoringBackendHttpSettings')]"
               }
             }
           },
@@ -2663,7 +2687,7 @@
                 "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'monitoringConsoleBackendPool')]"
               },
               "backendHttpSettings": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayMonitoringBackendHttpSettings')]"
               }
             }
           },
@@ -2678,7 +2702,7 @@
                 "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'clusterMasterBackendPool')]"
               },
               "backendHttpSettings": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayCmBackendHttpSettings')]"
               }
             }
           },
@@ -2693,7 +2717,7 @@
                 "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'clusterMasterBackendPool')]"
               },
               "backendHttpSettings": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayCmBackendHttpSettings')]"
               }
             }
           },
@@ -2708,7 +2732,7 @@
                 "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'deploymentServerBackendPool')]"
               },
               "backendHttpSettings": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayDsBackendHttpSettings')]"
               }
             }
           },
@@ -2723,7 +2747,7 @@
                 "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'splunk-appg', 'deploymentServerBackendPool')]"
               },
               "backendHttpSettings": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayBackendHttpSettings')]"
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'splunk-appg', 'appGatewayDsBackendHttpSettings')]"
               }
             }
           }

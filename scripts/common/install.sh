@@ -156,6 +156,9 @@ SHDEPLOYERHOST=shd.$DNSZONE
 # Open required ports for Splunk
 if test -f /etc/redhat-release; then
   firewall-cmd --zone=public --add-port=8000/tcp --permanent
+  firewall-cmd --zone=public --add-port=8001/tcp --permanent
+  firewall-cmd --zone=public --add-port=8002/tcp --permanent
+  firewall-cmd --zone=public --add-port=8003/tcp --permanent
   firewall-cmd --zone=public --add-port=8089/tcp --permanent
   firewall-cmd --zone=public --add-port=9997/tcp --permanent
   firewall-cmd --zone=public --add-port=8181/tcp --permanent
@@ -231,6 +234,7 @@ fi
 # Download user-seed.conf and server.conf - applies to all Splunk instance roles
 wget -nv -O $SPLUNKLOCAL/user-seed.conf "$COMMONCONFURL/etc/system/local/user-seed.conf"
 wget -nv -O $SPLUNKLOCAL/server.conf "$ROLECONFURL/etc/system/local/server.conf"
+wget -nv -O $SPLUNKLOCAL/web.conf "$ROLECONFURL/etc/system/local/web.conf"
 
 # Create PW hash for writing to config
 SPLUNKPWHASHED=$($SPLUNKHOME/bin/splunk hash-passwd $SPLUNKPW)
