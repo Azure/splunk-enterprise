@@ -414,7 +414,7 @@
     },
     "downloadRoot": {
       "type": "string",
-      "defaultValue": "https://agcisplunk.blob.core.windows.net/splunk-install-regional",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/splunk-enterprise/regional",
       "metadata": {
         "description": "Root directory for Splunk install scripts and config"
       }
