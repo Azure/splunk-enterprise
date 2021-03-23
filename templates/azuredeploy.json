@@ -1153,7 +1153,7 @@
         "name": "syslogpipcopy",
         "count": "[parameters('numberOfSyslogRecievers')]"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -1174,7 +1174,7 @@
         "name": "dspipcopy",
         "count": "[parameters('numberOfDeploymentServers')]"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -1191,7 +1191,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -1208,7 +1208,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -1224,7 +1224,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -1241,7 +1241,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -1254,7 +1254,7 @@
       "apiVersion": "2020-05-01",
       "name": "clustermaster",
       "location": "[parameters('location')]",
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
@@ -1285,7 +1285,7 @@
       "apiVersion": "2020-05-01",
       "name": "licensemaster",
       "location": "[parameters('location')]",
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
@@ -1314,7 +1314,7 @@
         "name": "indexerniccopy",
         "count": "[parameters('numberOfIndexers')]"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
@@ -1345,7 +1345,7 @@
         "name": "shniccopy",
         "count": "[parameters('numberOfSearchHeads')]"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
@@ -1382,7 +1382,7 @@
         "name": "forwarderniccopy",
         "count": "[parameters('numberOfForwarders')]"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
@@ -1413,7 +1413,7 @@
         "name": "syslogniccopy",
         "count": "[parameters('numberOfSyslogRecievers')]"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
@@ -1444,7 +1444,7 @@
         "name": "dsniccopy",
         "count": "[parameters('numberOfDeploymentServers')]"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
@@ -1478,7 +1478,7 @@
       "apiVersion": "2020-05-01",
       "name": "shd",
       "location": "[parameters('location')]",
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
@@ -1503,7 +1503,7 @@
       "apiVersion": "2020-05-01",
       "name": "monitoring",
       "location": "[parameters('location')]",
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
         "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
@@ -2739,7 +2739,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -2756,7 +2756,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -2773,7 +2773,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -2790,7 +2790,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -3093,7 +3093,7 @@
       "sku": {
         "name": "Standard"
       },
-"tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
+      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/publicIPAddresses'), parameters('tagsByResource')['Microsoft.Network/publicIPAddresses'], json('{}'))]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
