@@ -75,4 +75,4 @@ stages:
           azureResourceManagerConnection: '$(serviceConnection)'
           subscriptionId: '$(subscriptionId)'
           action: 'DeleteRG'
-          resourceGroupName: '$(Build.SourceBranchName)-${{image}}'
+          resourceGroupName: 'pr-$(Build.SourceBranchName)-${{image}}'
