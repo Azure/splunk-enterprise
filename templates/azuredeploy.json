@@ -1679,7 +1679,7 @@
       "zones": [ "1", "2", "3" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/applicationGateways'), parameters('tagsByResource')['Microsoft.Network/applicationGateways'], json('{}'))]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses/', 'appg')]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', 'appg')]",
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
       "properties": {
@@ -2087,9 +2087,9 @@
       "location": "[parameters('location')]",
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
-        "[concat('Microsoft.Network/applicationGateways/','splunk-appg')]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]",
+        "[resourceId('Microsoft.Network/applicationGateways', 'splunk-appg')]"
       ],
       "properties": {
         "ipConfigurations": [
@@ -2118,8 +2118,8 @@
       "location": "[parameters('location')]",
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
       ],
       "properties": {
         "ipConfigurations": [
@@ -2143,8 +2143,8 @@
       "location": "[parameters('location')]",
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
       ],
       "properties": {
         "ipConfigurations": [
@@ -2168,9 +2168,9 @@
       "location": "[parameters('location')]",
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
-        "[concat('Microsoft.Network/applicationGateways/','splunk-appg')]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]",
+        "[resourceId('Microsoft.Network/applicationGateways', 'splunk-appg')]"
       ],
       "properties": {
         "ipConfigurations": [
@@ -2203,8 +2203,10 @@
       },
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]",
+        "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-hec')]",
+        "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-outbound-hec')]"
       ],
       "properties": {
         "enableAcceleratedNetworking": true,
@@ -2234,9 +2236,9 @@
       },
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
-        "[concat('Microsoft.Network/applicationGateways/', 'splunk-appg')]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]",
+        "[resourceId('Microsoft.Network/applicationGateways', 'splunk-appg')]"
       ],
       "properties": {
         "enableAcceleratedNetworking": true,
@@ -2271,8 +2273,8 @@
       },
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
       ],
       "properties": {
         "enableAcceleratedNetworking": true,
@@ -2302,8 +2304,10 @@
       },
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]",
+        "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-syslog')]",
+        "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-outbound-syslog')]"
       ],
       "properties": {
         "enableAcceleratedNetworking": true,
@@ -2333,10 +2337,11 @@
       },
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
-        "[concat('Microsoft.Network/privateDnsZones/', variables('dnsZoneName'))]",
-        "[concat('Microsoft.Network/loadBalancers/', 'loadBalancer-ds')]",
-        "[concat('Microsoft.Network/applicationGateways/','splunk-appg')]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]",
+        "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds')]",
+        "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-outbound-ds')]",
+        "[resourceId('Microsoft.Network/applicationGateways', 'splunk-appg')]"
       ],
       "properties": {
         "enableAcceleratedNetworking": true,
@@ -2368,7 +2373,7 @@
       "zones": [ "[variables('cmZone')]" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'clustermaster')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2433,9 +2438,9 @@
           "name": "config-app",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'clustermaster')]",
+            "[resourceId('Microsoft.Compute/virtualMachines', 'clustermaster')]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
-            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+            "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds')]"
           ],
           "properties": {
             "publisher": "Microsoft.Azure.Extensions",
@@ -2460,7 +2465,7 @@
       "zones": [ "[variables('licenseMasterZone')]" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'licensemaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
       ],
       "properties": {
         "priority": "[parameters('vmPriority')]",
@@ -2526,8 +2531,8 @@
           "name": "config-app",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'licensemaster')]",
-            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+            "[resourceId('Microsoft.Compute/virtualMachines', 'licensemaster')]",
+            "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds')]"
           ],
           "properties": {
             "publisher": "Microsoft.Azure.Extensions",
@@ -2556,7 +2561,7 @@
         "count": "[parameters('numberOfIndexers')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'indexer', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('indexer', copyindex()))]"
       ],
       "properties": {
         "priority": "[parameters('vmPriority')]",
@@ -2611,7 +2616,7 @@
           "name": "config-app",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'indexer', copyindex())]",
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('indexer', copyindex()))]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
           ],
           "properties": {
@@ -2641,7 +2646,7 @@
         "count": "[parameters('numberOfSearchHeads')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'sh', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('sh', copyindex()))]"
       ],
       "properties": {
         "priority": "[parameters('vmPriority')]",
@@ -2707,7 +2712,7 @@
           "name": "config-app",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'sh', copyindex())]",
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('sh', copyindex()))]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
           ],
           "properties": {
@@ -2738,7 +2743,7 @@
         "count": "[parameters('numberOfForwarders')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'hf', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('hf', copyindex()))]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2804,8 +2809,8 @@
           "condition": "[parameters('deployHeavyForwarders')]",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'hf', copyindex())]",
-            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('hf', copyindex()))]",
+            "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds')]"
           ],
           "properties": {
             "publisher": "Microsoft.Azure.Extensions",
@@ -2835,7 +2840,7 @@
         "count": "[parameters('numberOfSyslogReceivers')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'syslog', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('syslog', copyindex()))]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2901,8 +2906,8 @@
           "condition": "[parameters('deploySyslogReceivers')]",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'syslog', copyindex())]",
-            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('syslog', copyindex()))]",
+            "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds')]"
           ],
           "properties": {
             "publisher": "Microsoft.Azure.Extensions",
@@ -2931,7 +2936,7 @@
         "count": "[parameters('numberOfDeploymentServers')]"
       },
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'ds', copyindex())]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('ds', copyindex()))]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2996,7 +3001,7 @@
           "name": "config-app",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'ds', copyindex())]",
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('ds', copyindex()))]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
           ],
           "properties": {
@@ -3022,7 +3027,7 @@
       "zones": [ "[variables('shdZone')]" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'clustermaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'clustermaster')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -3087,9 +3092,9 @@
           "name": "config-app",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'shd')]",
+            "[resourceId('Microsoft.Compute/virtualMachines', 'shd')]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
-            "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]"
+            "[resourceId('Microsoft.Network/loadBalancers', 'loadBalancer-ds')]"
           ],
           "properties": {
             "publisher": "Microsoft.Azure.Extensions",
@@ -3114,7 +3119,7 @@
       "zones": [ "[variables('monitoringZone')]" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', 'monitoring')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'monitoring')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -3179,7 +3184,7 @@
           "name": "config-app",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', 'monitoring')]",
+            "[resourceId('Microsoft.Compute/virtualMachines', 'monitoring')]",
             "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
             "[resourceId('Microsoft.Network/loadBalancers','loadBalancer-ds')]",
             "[resourceId('Microsoft.Network/networkInterfaces','shd')]",
