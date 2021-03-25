@@ -2446,7 +2446,7 @@
               "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/clustermaster', '2019-07-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference('Microsoft.Compute/virtualMachines/clustermaster', '2019-07-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
             }
           }
         }
@@ -2538,7 +2538,7 @@
               "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/licensemaster', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-file \"', parameters('licenseFile'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference('Microsoft.Compute/virtualMachines/licensemaster', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-file \"', parameters('licenseFile'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
             }
           }
         }
@@ -2623,7 +2623,7 @@
               "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role indexer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/indexer', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --indexer-pipelines ', parameters('indexerPipelines'), ' --vm-sku ', parameters('indexerSku'), ' --dns-zone ', variables('dnsZoneName'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role indexer --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/indexer', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --indexer-pipelines ', parameters('indexerPipelines'), ' --vm-sku ', parameters('indexerSku'), ' --dns-zone ', variables('dnsZoneName'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
             }
           }
         }
@@ -2719,7 +2719,7 @@
               "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role search-head --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/sh', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --sh-instance ', copyindex(), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role search-head --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/sh', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --sh-instance ', copyindex(), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
             }
           }
         }
@@ -3100,7 +3100,7 @@
               "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role search-head-deployer --splunk-url \"', variables('splunkDownload'), '\" --availability-zone ', substring(string(reference('Microsoft.Compute/virtualMachines/shd', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --indexer-count ', parameters('numberOfIndexers'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'), ' --dns-zone ', variables('dnsZoneName'))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role search-head-deployer --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference('Microsoft.Compute/virtualMachines/shd', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --indexer-count ', parameters('numberOfIndexers'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'), ' --dns-zone ', variables('dnsZoneName'))]"
             }
           }
         }

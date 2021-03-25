@@ -9,8 +9,8 @@ SPLUNKLOCAL=$SPLUNKHOME/etc/system/local
 # Parse command-line options
 
 # Option strings
-SHORT=s:u:p:r:l:d:c:D:i:h:I:v:P:a:R:S:H:C:n:f:N:
-LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-file:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,availability-zone:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:
+SHORT=U:u:p:r:l:d:c:D:i:h:I:v:P:s:R:S:H:C:n:f:N:
+LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-file:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,site:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:
 
 # Get options
 OPTS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
@@ -24,7 +24,7 @@ SPLUNKUSER=splunkadmin
 # Set variables 
 while true ; do
   case "$1" in
-    -s | --splunk-url )
+    -U | --splunk-url )
       SPLUNKURL="$2"
       shift 2
       ;;
@@ -76,8 +76,8 @@ while true ; do
       PASS4SYMMKEY="$2"
       shift 2
       ;;
-    -a | --availability-zone )
-      AZ="$2"
+    -s | --site )
+      SITE="$2"
       shift 2
       ;;
     -R | --replication-factor )
@@ -132,7 +132,7 @@ echo "LICENSEMASTERHOST = $LICENSEMASTERHOST"
 echo "HFPIPELINES = $HFPIPELINES"
 echo "VMSKU = $VMSKU"
 echo "INDEXERPIPELINES = $INDEXERPIPELINES"
-echo "AZ = $AZ"
+echo "SITE = $SITE"
 echo "REPLICATIONFACTOR = $REPLICATIONFACTOR"
 echo "SEARCHFACTOR = $SEARCHFACTOR"
 echo "DEPLOYHEC = $DEPLOYHEC"
@@ -247,7 +247,7 @@ sed -i "s/##SPLUNKUSER##/$SPLUNKUSER/g" $SPLUNKLOCAL/user-seed.conf
 sed -i "s/##LICENSEMASTERHOST##/$LICENSEMASTERHOST/g" $SPLUNKLOCAL/server.conf
 
 # Replace AZ placeholder in server.conf 
-sed -i "s/##ZONE##/$AZ/g" $SPLUNKLOCAL/server.conf
+sed -i "s/##SITE##/$SITE/g" $SPLUNKLOCAL/server.conf
 
 # Replace cluster master host in server.conf
 sed -i "s/##CLUSTERMASTERHOST##/$CLUSTERMASTERHOST/g" $SPLUNKLOCAL/server.conf
@@ -263,7 +263,7 @@ sed -i "s/##SECRET##/$PASS4SYMMKEY/g" $SPLUNKLOCAL/server.conf
 sed -i "s/##HOSTNAME##/$HOSTNAME/g" $SPLUNKLOCAL/server.conf
 
 # Construct indexer list for Deployment Server, Search Head Deployer and Heavy Forwarders
-if [ "$ROLE" = "deployment-server" ] || [ "$ROLE" = "search-head-deployer" ]; then
+if [ "$ROLE" = "deployment-server" ] || [ "$ROLE" = "search-head-deployer" ] || [ "$ROLE" = "heavy-forwarder" ]; then
     INDEXERCOUNT=$(($INDEXERCOUNT - 1))
     INDEXERLIST=indexer0.$DNSZONE:9997
     if test $INDEXERCOUNT -gt 0; then
@@ -324,7 +324,7 @@ case "$ROLE" in
         ;;
     license-master )
         mkdir -p $SPLUNKHOME/etc/licenses/enterprise
-        echo $LICENSEFILE | base64 -d > $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic
+        echo $LICENSEFILE | base64 -di > $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic
         ;;
     search-head-deployer )
         mkdir -p $SPLUNKHOME/etc/shcluster/apps/default_outputs/local
