@@ -17,6 +17,7 @@ parameters:
   - ubuntu1804
   - centos77
   - rhel76payg
+  - ubuntu2004
 
 variables:
   ${{ if eq(variables['Build.Reason'], 'PullRequest') }}: 
