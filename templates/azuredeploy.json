@@ -120,6 +120,12 @@
     "vmImage": {
       "type": "string",
       "defaultValue": "ubuntu1804",
+      "allowedValues": [
+        "ubuntu2004",
+        "rhel76payg",
+        "ubuntu1804",
+        "centos77"
+      ],
       "metadata": {
         "description": "VM image variable identifier"
       }
@@ -478,6 +484,12 @@
       "publisher": "RedHat",
       "offer": "RHEL",
       "sku": "7.6",
+      "version": "latest"
+    },
+    "ubuntu2004": {
+      "publisher": "canonical",
+      "offer": "0001-com-ubuntu-server-focal",
+      "sku": "20_04-lts",
       "version": "latest"
     },
     "isL": "[contains(parameters('indexerSku'), '_L')]",
