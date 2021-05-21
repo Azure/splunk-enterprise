@@ -291,16 +291,21 @@ case "$ROLE" in
         SITESEARCHFACTOR=$(($SEARCHFACTOR/3))
 
         if [ $SITEREPLICATIONFACTOR = "0" ]; then
-            sed -i "s/##REPLICATIONFACTOR##/site_replication_factor = origin:1,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
+            sed -i "s/##SITEREPLICATIONFACTOR##/site_replication_factor = origin:1,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
         else
-            sed -i "s/##REPLICATIONFACTOR##/site_replication_factor = origin:1,site1:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf 
+            sed -i "s/##SITEREPLICATIONFACTOR##/site_replication_factor = origin:1,site1:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,site3:$SITEREPLICATIONFACTOR,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf 
         fi
 
+        sed -i "s/##REPLICATIONFACTOR##/$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
+
         if [ $SITESEARCHFACTOR = "0" ]; then
-            sed -i "s/##SEARCHFACTOR##/site_search_factor = origin:1,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
+            sed -i "s/##SITESEARCHFACTOR##/site_search_factor = origin:1,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
         else
-            sed -i "s/##SEARCHFACTOR##/site_search_factor = origin:1,site1:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf 
+            sed -i "s/##SITESEARCHFACTOR##/site_search_factor = origin:1,site1:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,site3:$SITESEARCHFACTOR,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf 
         fi
+
+        sed -i "s/##SEARCHFACTOR##/$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
+        
         ;;
     indexer )
         wget -nv -O $SPLUNKLOCAL/inputs.conf "$COMMONCONFURL/etc/system/local/inputs.conf"
