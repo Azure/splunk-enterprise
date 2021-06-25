@@ -130,11 +130,11 @@ For receiving events pushed via HTTP, Splunk recommends using their HTTP Event C
 In line with Splunk guidance, the Splunk Enterprise on Azure reference implementation currently supports enabling HEC on the Indexers and also includes a Load Balancer for high availability.
 
 ### Syslog Receivers
-If there is a requirement to ingest syslog data into Splunk, a syslog receiver will be required. For high availability in larger environments, [Splunk recommends](https://www.splunk.com/en_us/blog/tips-and-tricks/syslog-syslog-ng-and-splunk-forwarders.html) using a third-party syslog receiving tool for writing the messages to disk, with a Splunk UF installed locally to read those files.
+If there is a requirement to ingest syslog data into Splunk, a syslog receiver will be required. For high availability in larger environments, [Splunk recommends](https://www.splunk.com/en_us/blog/tips-and-tricks/syslog-ng-and-hec-scalable-aggregated-data-collection-in-splunk.html) using Splunk Connect for Syslog, a container based solution for collecting syslog messages and forwarding to their HTTP Event Collector.
 
 The recommended VM family for Syslog Receivers is the general-purpose Dds_v4 family.
 
-The Splunk Enterprise on Azure reference implementation supports optionally deploying syslog receiver nodes, running syslog-ng and the Splunk Universal Forwarder.
+The Splunk Enterprise on Azure reference implementation supports optionally deploying syslog receiver nodes, running Splunk Connect for Syslog which is configured to forward logs to the HTTP Event Collector. If syslog receivers are required, HTTP event collection must be enabled.
 
 ## Networking
 
@@ -293,7 +293,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Cluster-wide replication factor | 3 | The Indexer cluster replication factor |
 | Cluster-wide search factor | 2 | The Indexer cluster search factor |
 | Provision Indexer VM Public IPs | No | Whether to deploy Indexer VMs with Public IPs |
-| Configure HTTP Event Collection on Indexers | No | Whether to configure HTTP Event Collection on the Indexers |
+| Configure HTTP Event Collection on Indexers | No | Whether to configure HTTP Event Collection on the Indexers, this will be enabled if syslog receivers are required |
 | Use Public IP for HTTP Event Collection | No | Whether to deploy the HTTP Event Collection Load Balancer with a Public IP |
 
 ### Search Head Configuration
