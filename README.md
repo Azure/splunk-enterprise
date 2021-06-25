@@ -250,7 +250,7 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Forwarder Subnet | forwarder (10.1.3.0/24) | The name, size and address space for the forwarder subnet within the Virtual Network. If Heavy Forwarders are deployed they will be deployed in this subnet. This should be at least a /24 size subnet |
 | Azure Bastion Subnet | AzureBastionSubnet (10.1.4.0/27) | The name, size and address space for the Azure Bastion subnet within the Virtual Network. This will be required if the VMs are deployed without private IPs. This should be at least a /24 size subnet |
 | Application Gateway Subnet | ApplicationGatewaySubnet (10.1.5.0/28) | The name, size and address space for the Application Gateway subnet within the Virtual Network. The Application Gateway for access to the Splunk UI will be deployed in this subnet. This should be at least a /24 size subnet |
-| Provision Azure Bastion Service | No | Whether to provision Azure Bastion service. |
+| Provision Azure Bastion Service | Yes | Whether to provision Azure Bastion service. |
 | Source CIDR block for Splunk UI | 0.0.0.0/0 | Source IPs to allow for access to the Splunk UI |
 | Source CIDR block for SSH access to VMs | 0.0.0.0/0 | Source IPs to allow for SSH access to the VMs |
 
@@ -271,21 +271,21 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Splunk pass4SymmKey | no default | The pass4SymmKey used when configuring Splunk clustering. This should contain at least one number, upper case and lower case letter and symbol |
 | Splunk license file | no default | The Splunk license to be installed on the License Master |
 | Splunk Enterprise Installer URL | no default | Provide a publicly accessible endpoint where your chosen Splunk version can be downloaded, such as an Azure storage account. The file should be in .tgz format |
-| License Master Server Size | D16s v3 | The VM SKU for the License Master |
-| Deployment Server Size | D16s v3 | The VM SKU for Deployment Server |
+| License Master Server Size | D16ds_v4 | The VM SKU for the License Master |
+| Deployment Server Size | D16ds_v4 | The VM SKU for Deployment Server |
 | Provision Deployment Server VM Public IP | No | Whether to deploy Deployment Server VM with a Public IP |
 | Provision Deployment Server Load Balancer Public IP | No | Whether to deploy Deployment Server Load Balancer with a Public IP |
-| Monitoring Console VM Size | D16s v3 | The VM SKU for Monitoring Console |
+| Monitoring Console VM Size | D16ds_v4 | The VM SKU for Monitoring Console |
 | Provision Monitoring Console VM Public IP | No | Whether to deploy Monitoring Console VM with a Public IP |
 
 ### Indexer Configuration
 
 | Option Name | Default | Description |
 |--|--|--|
-| Cluster Master Size | D16s v3 | The VM SKU for the Cluster Master |
+| Cluster Master Size | D16ds_v4 | The VM SKU for the Cluster Master |
 | Provision Cluster Master VM Public IP | No | Whether to deploy Cluster Master VM with a Public IP |
 | Number of Indexers | 3 | Number of indexers to be deployed in the Indexer cluster |
-| Indexer Size | L64s v2 | The VM SKU for the Indexers |
+| Indexer Size | D64ds_v4 | The VM SKU for the Indexers |
 | Hot/Warm Volume Size | 1024 TB | The size of the hot/warm disk on each Indexer. This will only be selected if the Indexer VM SKU does not have a suitable local disk |
 | Cold Volume Type | Standard HDD | The type of disk to use for the cold volume on each Indexer |
 | Cold Volume Size | 1024 TB | The size of the hot/warm disk on each Indexer |
@@ -301,9 +301,9 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Option Name | Default | Description |
 |--|--|--|
 | Number of Search Heads | 3 | Number of Search Heads to be deployed in the Search Head cluster |
-| Search Head Size | D64s v3 | The VM SKU for Search Heads |
+| Search Head Size | D64ds_v4 | The VM SKU for Search Heads |
 | Provision Search Head VMs Public IP | No | Whether to deploy Search Head VMs with a Public IPs |
-| Search Head Deployer Size | D16s v3 | The VM SKU for Search Head Deployer |
+| Search Head Deployer Size | D16ds_v4 | The VM SKU for Search Head Deployer |
 | Provision Search Head Deployer VM Public IP | No | Whether to deploy Search Head Deployer VM with a Public IP |
 
 ### Forwarder Configuration
@@ -312,12 +312,12 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 |--|--|--|
 | Provision Heavy Forwarders | No | Whether to deploy Heavy Forwarders |
 | Number of Heavy Forwarders | 3 | Number of Heavy Forwarders to be deployed |
-| Heavy Forwarder Size | D8s v3 | The VM SKU for Heavy Forwarders |
+| Heavy Forwarder Size | D8ds_v4 | The VM SKU for Heavy Forwarders |
 | Number of pipelines per Heavy Forwarder | 2 | Number of ingestion pipelines for the Heavy Forwarders |
 | Provision Heavy Forwarder VM Public IP | No | Whether to deploy Heavy Forwarders VM with a Public IP |
 | Provision Syslog Receivers | No | Whether to deploy Syslog Receivers |
 | Number of Syslog Receivers | 3 | Number of Syslog Receivers to be deployed |
-| Syslog Receivers Size | D8s v3 | The VM SKU for Syslog Receivers |
+| Syslog Receivers Size | D8ds_v4 | The VM SKU for Syslog Receivers |
 | Source CIDR block for Syslog forwarding | 0.0.0.0/0 | Source IPs to allow for syslog forwarding to the Syslog Receiver VMs |
 | Provision Syslog Receiver VMs with Public IP | No | Whether to deploy Syslog Receiver VMs with Public IPs |
 | Provision Syslog Receiver Load Balancer with Public IP | No | Whether to deploy Syslog Receiver Load Balancer with a Public IP |
