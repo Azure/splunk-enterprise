@@ -3665,6 +3665,10 @@
     "vnetName": {
       "type": "string",
       "value": "[variables('vnetName')]"
+    },
+    "hecToken": {
+      "type": "string",
+      "value": "[variables('hecToken')]"
     }
   }
 }
