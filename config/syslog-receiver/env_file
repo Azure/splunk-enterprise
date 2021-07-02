@@ -1,0 +1,4 @@
+SPLUNK_HEC_URL=https://##HECLB##:8088
+SPLUNK_HEC_TOKEN=##HECTOKEN##
+#Uncomment the following line if using untrusted SSL certificates
+SC4S_DEST_SPLUNK_HEC_TLS_VERIFY=no

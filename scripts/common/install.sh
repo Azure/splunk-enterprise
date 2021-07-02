@@ -9,8 +9,8 @@ SPLUNKLOCAL=$SPLUNKHOME/etc/system/local
 # Parse command-line options
 
 # Option strings
-SHORT=U:u:p:r:l:d:c:D:i:h:I:v:P:s:R:S:H:C:n:f:N:
-LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-file:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,site:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:
+SHORT=U:u:p:r:l:d:c:D:i:h:I:v:P:s:R:S:H:C:n:f:N:t:
+LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-file:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,site:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:,hec-token:
 
 # Get options
 OPTS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
@@ -108,6 +108,10 @@ while true ; do
       HFCOUNT="$2"
       shift 2
       ;;
+    -t | --hec-token )
+      HECTOKEN="$2"
+      shift 2
+      ;;
     -- )
       shift
       break
@@ -140,6 +144,7 @@ echo "SHCOUNT = $SHCOUNT"
 echo "SHINSTANCE = $SHINSTANCE"
 echo "DEPLOYHFS = $DEPLOYHFS"
 echo "HFCOUNT = $HFCOUNT"
+echo "HECTOKEN = $HECTOKEN"
 
 # Set common and role-specific URLs
 COMMONCONFURL=$CONFURL/common
@@ -286,8 +291,7 @@ case "$ROLE" in
             mkdir $MASTERAPPS/httpeventconfig
             mkdir $MASTERAPPS/httpeventconfig/local
             wget -nv -O $MASTERAPPS/httpeventconfig/local/inputs.conf "$ROLECONFURL/etc/master-apps/httpeventconfig/local/inputs.conf"
-            TOKEN=$(uuidgen)
-            sed -i "s/##TOKEN##/$TOKEN/g" $MASTERAPPS/httpeventconfig/local/inputs.conf
+            sed -i "s/##TOKEN##/$HECTOKEN/g" $MASTERAPPS/httpeventconfig/local/inputs.conf
         else
             echo "HTTP Event Collection not required, continuing..."
         fi
@@ -295,16 +299,17 @@ case "$ROLE" in
         SITESEARCHFACTOR=$(($SEARCHFACTOR/3))
 
         if [ $SITEREPLICATIONFACTOR = "0" ]; then
-            sed -i "s/##REPLICATIONFACTOR##/site_replication_factor = origin:1,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
+            sed -i "s/##SITEREPLICATIONFACTOR##/site_replication_factor = origin:1,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
         else
-            sed -i "s/##REPLICATIONFACTOR##/site_replication_factor = origin:1,site1:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf 
+            sed -i "s/##SITEREPLICATIONFACTOR##/site_replication_factor = origin:1,site1:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,site3:$SITEREPLICATIONFACTOR,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf 
         fi
-
+        sed -i "s/##REPLICATIONFACTOR##/$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
         if [ $SITESEARCHFACTOR = "0" ]; then
-            sed -i "s/##SEARCHFACTOR##/site_search_factor = origin:1,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
+            sed -i "s/##SITESEARCHFACTOR##/site_search_factor = origin:1,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
         else
-            sed -i "s/##SEARCHFACTOR##/site_search_factor = origin:1,site1:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf 
+            sed -i "s/##SITESEARCHFACTOR##/site_search_factor = origin:1,site1:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,site3:$SITESEARCHFACTOR,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
         fi
+        sed -i "s/##SEARCHFACTOR##/$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
         ;;
     indexer )
         wget -nv -O $SPLUNKLOCAL/inputs.conf "$COMMONCONFURL/etc/system/local/inputs.conf"

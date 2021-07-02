@@ -49,7 +49,7 @@ This documentation provides detailed guidance to support the deployment of Splun
 
 ## Core Components
 
-This section describes the core Splunk Enterprise components and relevant Azure-specific guidance including recommended VM families. Core Splunk Enterprise components include Indexers and Cluster Master, Search Heads ad Search Head Deployer, Monitoring Console and License Master.
+This section describes the core Splunk Enterprise components and relevant Azure-specific guidance including recommended VM families. Core Splunk Enterprise components include Indexers, and Cluster Master, Search Heads and Search Head Deployer, Monitoring Console and License Master.
 
 ### Indexers & Cluster Master
 An Indexer is the Splunk Enterprise component that indexes data; transforms raw data into events and writes them to disk. The Indexer also performs searches against indexed data in response to search requests. Splunk Indexer Virtual Machines (VMs) can be deployed as an Indexer Cluster to enable horizontal scalability and high availability of the Indexer component.  The Cluster Master is the Splunk Enterprise instance that manages an Indexer Cluster. The Cluster Master manages configuration for the Indexers and also manages replication of data between clustered nodes and sites to ensure that the number of copies of data in the cluster meets the [search](https://docs.splunk.com/Splexicon:Searchfactor) and [replication](https://docs.splunk.com/Splexicon:Replicationfactor) factors.
@@ -60,9 +60,11 @@ This reference architecture recommends two VM families for Indexers, the [genera
 
 The **Ls_v2 family** features very high throughput, low latency, directly mapped local NVMe storage which is ideally suited to Splunk hot/warm storage disks due to the high IOPS and throughput. This makes the Ls_v2 family the preferred option where storage performance is paramount.  As these are locally attached ephemeral disks, data will be lost if you de-allocate your VMs or there is a platform-initiated redeployment of the VM to an alternative host in the event of a failure. The replication of data across three Availability Zones provides data durability, however simultaneous failures across all Availability Zones could theoretically result in permanent data loss.  
 
-The **Dds_v4 family** is the latest general-purpose Azure VM family offering well priced compute for general purpose workloads. If managed disks are attached for Splunk hot/warm and cold storage, these can offer better data durability in the case of a platform-initiated redeployment of the VM due to a failure. However, the Premium Managed Disks storage will not offer as high IO or as low latency as the locally attached NVMe disks with the Ls_v2 family. This makes the Dds_v4 family the preferred option where data durability is the overriding priority. 
+The **Dds_v4 family** is the latest general-purpose Azure VM family offering well priced compute for general purpose workloads. If managed disks are attached for Splunk hot/warm and cold storage, these can offer better data durability in the case of a platform-initiated redeployment of the VM due to a failure. However, the Premium Managed Disks storage will not offer the same high IOPS or ultra low latency as the locally attached NVMe disks with the Ls_v2 family. This makes the Dds_v4 family the preferred option where data durability is the overriding priority. 
 
 The documentation for both of the VM families should be reviewed via the links above to fully understand the VM characteristics prior to implementing Splunk Enterprise in production to ensure you select the most appropriate SKU to meet your performance and availability requirements.  
+
+As a general guide, the Ls_v2 family is appropriate if your Splunk search profile is mostly storage-bound. If your search profile is CPU-bound, the Dds_v4 family is likely the preferred choice due to the more recent CPU generation. For an explanation of search characteristics and performance implications please see the [Splunk documentation](https://docs.splunk.com/Documentation/Splunk/8.2.0/Capacity/HowsearchtypesaffectSplunkEnterpriseperformance) on this topic.
 
 When considering Cluster Master availability, please note that if the Cluster Master is not available the data indexed in the Indexer cluster will still be fully available and replicated. In the event of an Indexer failure whilst the Cluster Master is inaccessible, data availability may be impacted until the Cluster Master is restored. For more details on the impact of a Cluster Master failure please refer to the [Splunk documentation](https://docs.splunk.com/Documentation/Splunk/8.0.6/Indexer/Whathappenswhenamasternodegoesdown).
 
@@ -134,11 +136,11 @@ For receiving events pushed via HTTP, Splunk recommends using their HTTP Event C
 In line with Splunk guidance, the Splunk Enterprise on Azure reference implementation currently supports enabling HEC on the Indexers and also includes a Load Balancer for high availability.
 
 ### Syslog Receivers
-If there is a requirement to ingest syslog data into Splunk, a syslog receiver will be required. For high availability in larger environments, [Splunk recommends](https://www.splunk.com/en_us/blog/tips-and-tricks/syslog-syslog-ng-and-splunk-forwarders.html) using a third-party syslog receiving tool for writing the messages to disk, with a Splunk UF installed locally to read those files.
+If there is a requirement to ingest syslog data into Splunk, a syslog receiver will be required. For high availability in larger environments, [Splunk recommends](https://www.splunk.com/en_us/blog/tips-and-tricks/syslog-ng-and-hec-scalable-aggregated-data-collection-in-splunk.html) using Splunk Connect for Syslog, a container based solution for collecting syslog messages and forwarding to their HTTP Event Collector.
 
 The recommended VM family for Syslog Receivers is the general-purpose Dds_v4 family.
 
-The Splunk Enterprise on Azure reference implementation supports optionally deploying syslog receiver nodes, running syslog-ng and the Splunk Universal Forwarder.
+The Splunk Enterprise on Azure reference implementation supports optionally deploying syslog receiver nodes, running Splunk Connect for Syslog which is configured to forward logs to the HTTP Event Collector. If syslog receivers are required, HTTP event collection must be enabled.
 
 ## Networking
 
@@ -252,9 +254,9 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Search Subnet | search (10.1.1.0/24) | The name, size and address space for the search head subnet within the Virtual Network. This should be at least a /24 size subnet |
 | Management Subnet | management (10.1.2.0/24) | The name, size and address space for the indexer subnet within the Virtual Network. This should be at least a /25 size subnet |
 | Forwarder Subnet | forwarder (10.1.3.0/24) | The name, size and address space for the forwarder subnet within the Virtual Network. If Heavy Forwarders are deployed they will be deployed in this subnet. This should be at least a /24 size subnet |
-| Azure Bastion Subnet | AzureBastionSubnet (10.1.4.0/27) | The name, size and address space for the Azure Bastion subnet within the Virtual Network. This will be required if the VMs are deployed wthout private IPs. This should be at least a /24 size subnet |
-| Application Gateway Subnet | ApplicationGatewaySubnet (10.1.5.0/28) | The name, size and address space for the Application Gateway subnet within the Virtual Network. Th Application Gateway for access to the Splunk UI will be deployed in this subnet. This should be at least a /24 size subnet |
-| Provision public IP addresses | No | Whether to provision VMs with Public IPs |
+| Azure Bastion Subnet | AzureBastionSubnet (10.1.4.0/27) | The name, size and address space for the Azure Bastion subnet within the Virtual Network. This will be required if the VMs are deployed without private IPs. This should be at least a /24 size subnet |
+| Application Gateway Subnet | ApplicationGatewaySubnet (10.1.5.0/28) | The name, size and address space for the Application Gateway subnet within the Virtual Network. The Application Gateway for access to the Splunk UI will be deployed in this subnet. This should be at least a /24 size subnet |
+| Provision Azure Bastion Service | Yes | Whether to provision Azure Bastion service. |
 | Source CIDR block for Splunk UI | 0.0.0.0/0 | Source IPs to allow for access to the Splunk UI |
 | Source CIDR block for SSH access to VMs | 0.0.0.0/0 | Source IPs to allow for SSH access to the VMs |
 
@@ -274,27 +276,30 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Splunk Password | no default | The password used for the initial Splunk admin user. This should contain at least one number, upper case and lower case letter and symbol |
 | Splunk pass4SymmKey | no default | The pass4SymmKey used when configuring Splunk clustering. This should contain at least one number, upper case and lower case letter and symbol |
 | Splunk license file | no default | The Splunk license to be installed on the License Master |
-| Splunk Enterprise Installer URL | no default | Provide a URL for your chosen Splunk Enterprise version from [splunk.com](splunk.com). This should be in .tgz format |
-| License Master Server Size | D16s v3 | The VM SKU for the License Master |
-| Deployment Server Size | D16s v3 | The VM SKU for Deployment Server |
+| Splunk Enterprise Installer URL | no default | Provide a publicly accessible endpoint where your chosen Splunk version can be downloaded, such as an Azure storage account. The file should be in .tgz format |
+| License Master Server Size | D16ds_v4 | The VM SKU for the License Master |
+| Deployment Server Size | D16ds_v4 | The VM SKU for Deployment Server |
 | Provision Deployment Server VM Public IP | No | Whether to deploy Deployment Server VM with a Public IP |
 | Provision Deployment Server Load Balancer Public IP | No | Whether to deploy Deployment Server Load Balancer with a Public IP |
-| Monitoring Console VM Size | D16s v3 | The VM SKU for Monitoring Console |
+| Monitoring Console VM Size | D16ds_v4 | The VM SKU for Monitoring Console |
 | Provision Monitoring Console VM Public IP | No | Whether to deploy Monitoring Console VM with a Public IP |
 
 ### Indexer Configuration
 
 | Option Name | Default | Description |
 |--|--|--|
-| Cluster Master Size | D16s v3 | The VM SKU for the Cluster Master |
+| Cluster Master Size | D16ds_v4 | The VM SKU for the Cluster Master |
+| Provision Cluster Master VM Public IP | No | Whether to deploy Cluster Master VM with a Public IP |
 | Number of Indexers | 3 | Number of indexers to be deployed in the Indexer cluster |
-| Indexer Size | L64s v2 | The VM SKU for the Indexers |
+| Indexer Size | D64ds_v4 | The VM SKU for the Indexers |
 | Hot/Warm Volume Size | 1024 TB | The size of the hot/warm disk on each Indexer. This will only be selected if the Indexer VM SKU does not have a suitable local disk |
+| Cold Volume Type | Standard HDD | The type of disk to use for the cold volume on each Indexer |
 | Cold Volume Size | 1024 TB | The size of the hot/warm disk on each Indexer |
 | Number of indexing pipelines | 2 | Number of ingest pipelines on the Indexers |
 | Cluster-wide replication factor | 3 | The Indexer cluster replication factor |
 | Cluster-wide search factor | 2 | The Indexer cluster search factor |
-| Configure HTTP Event Collection on Indexers | No | Whether to configure HTTP Event Collection on the Indexers |
+| Provision Indexer VM Public IPs | No | Whether to deploy Indexer VMs with Public IPs |
+| Configure HTTP Event Collection on Indexers | No | Whether to configure HTTP Event Collection on the Indexers, this will be enabled if syslog receivers are required |
 | Use Public IP for HTTP Event Collection | No | Whether to deploy the HTTP Event Collection Load Balancer with a Public IP |
 
 ### Search Head Configuration
@@ -302,9 +307,9 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 | Option Name | Default | Description |
 |--|--|--|
 | Number of Search Heads | 3 | Number of Search Heads to be deployed in the Search Head cluster |
+| Search Head Size | D64ds_v4 | The VM SKU for Search Heads |
 | Provision Search Head VMs Public IP | No | Whether to deploy Search Head VMs with a Public IPs |
-| Search Head size | D64s v3 | The VM SKU for Search Heads |
-| Search Head Deployer Size | D16s v3 | The VM SKU for Search Head Deployer |
+| Search Head Deployer Size | D16ds_v4 | The VM SKU for Search Head Deployer |
 | Provision Search Head Deployer VM Public IP | No | Whether to deploy Search Head Deployer VM with a Public IP |
 
 ### Forwarder Configuration
@@ -313,16 +318,15 @@ Once the deployment is completed successfully, the outputs of the deployment wil
 |--|--|--|
 | Provision Heavy Forwarders | No | Whether to deploy Heavy Forwarders |
 | Number of Heavy Forwarders | 3 | Number of Heavy Forwarders to be deployed |
-| Heavy Forwarder Size | D8s v3 | The VM SKU for Heavy Forwarders |
+| Heavy Forwarder Size | D8ds_v4 | The VM SKU for Heavy Forwarders |
 | Number of pipelines per Heavy Forwarder | 2 | Number of ingestion pipelines for the Heavy Forwarders |
 | Provision Heavy Forwarder VM Public IP | No | Whether to deploy Heavy Forwarders VM with a Public IP |
 | Provision Syslog Receivers | No | Whether to deploy Syslog Receivers |
 | Number of Syslog Receivers | 3 | Number of Syslog Receivers to be deployed |
-| Syslog Receivers Size | D8s v3 | The VM SKU for Syslog Receivers |
+| Syslog Receivers Size | D8ds_v4 | The VM SKU for Syslog Receivers |
 | Source CIDR block for Syslog forwarding | 0.0.0.0/0 | Source IPs to allow for syslog forwarding to the Syslog Receiver VMs |
 | Provision Syslog Receiver VMs with Public IP | No | Whether to deploy Syslog Receiver VMs with Public IPs |
 | Provision Syslog Receiver Load Balancer with Public IP | No | Whether to deploy Syslog Receiver Load Balancer with a Public IP |
-| Splunk Universal Forwarder Installer URL | no default | Provide a URL for your chosen Splunk Universal Forwarder version from [splunk.com](splunk.com). This should be in .tgz format |
 
 ### Tags
 

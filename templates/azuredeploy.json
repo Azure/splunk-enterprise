@@ -162,13 +162,6 @@
         "description": "URL for Splunk Enterprise .tgz file"
       }
     },
-    "splunkUfBlobUrl": {
-      "type": "string",
-      "defaultValue": "replace-me",
-      "metadata": {
-        "description": "URL for Splunk UF .tgz file"
-      }
-    },
     "licenseFile": {
       "type": "string",
       "metadata": {
@@ -446,6 +439,7 @@
   },
   "variables": {
     "resgpguid": "[substring(replace(guid(resourceGroup().id), '-', ''), 0, 4)]",
+    "hecToken": "[guid(resourceGroup().id)]",
     "vnetName": "splunkvnet",
     "indexerSubnetName": "indexer",
     "searchSubnetName": "search",
@@ -461,7 +455,6 @@
     "syslogInstallScriptPath": "[concat(variables('downloadRoot'), '/scripts/syslog/install.sh')]",
     "configPath": "[concat(variables('downloadRoot'), '/config')]",
     "splunkDownload": "[parameters('splunkBlobUrl')]",
-    "splunkUfDownload": "[parameters('splunkUfBlobUrl')]",
     "dnsZoneName": "[parameters('dnsZoneName')]",
     "cmZone": "1",
     "shdZone": "1",
@@ -654,9 +647,45 @@
     "appGWIpVar1": "[first(split(parameters('appGSubnetAddressPrefix'), '/'))]",
     "appGWIpVar2": "[split(variables('appGWIpVar1'), '.')]",
     "appGwIpVar3": "[add(int(variables('appGWIpVar2')[3]), 4)]",
-    "appGwIp": "[concat(variables('appGWIpVar2')[0], '.', variables('appGWIpVar2')[1], '.', variables('appGWIpVar2')[2], '.', variables('appGwIpVar3'))]"
+    "appGwIp": "[concat(variables('appGWIpVar2')[0], '.', variables('appGWIpVar2')[1], '.', variables('appGWIpVar2')[2], '.', variables('appGwIpVar3'))]",
+    "daExtensionName": "DependencyAgentLinux",
+    "daExtensionType": "DependencyAgentLinux",
+    "daExtensionVersion": "9.5",
+    "mmaExtensionName": "OMSExtension",
+    "mmaExtensionType": "OmsAgentForLinux",
+    "mmaExtensionVersion": "1.13"
   },
   "resources": [
+    {
+      "name": "splunk",
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2020-08-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "apiVersion": "2015-11-01-preview",
+      "type": "Microsoft.OperationsManagement/solutions",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
+      ],
+      "name": "[concat('VMInsights', '(', split(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'),'/')[8], ')')]",
+      "properties": {
+        "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
+      },
+      "plan": {
+        "name": "[concat('VMInsights', '(', split(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'),'/')[8], ')')]",
+        "product": "[concat('OMSGallery/', 'VMInsights')]",
+        "promotionCode": "",
+        "publisher": "Microsoft"
+      }
+    },
     {
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[variables('vnetName')]",
@@ -2385,7 +2414,8 @@
       "zones": [ "[variables('cmZone')]" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'clustermaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'clustermaster')]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2463,7 +2493,46 @@
               "fileUris": [ "[variables('installScriptPath')]" ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference('Microsoft.Compute/virtualMachines/clustermaster', '2019-07-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role cluster-master --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference('Microsoft.Compute/virtualMachines/clustermaster', '2019-07-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --replication-factor ', parameters('replicationFactor'), ' --search-factor ', parameters('searchFactor'), ' --deploy-hec ', parameters('deployHEC'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'), ' --hec-token ', variables('hecToken'))]"
+            }
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'clustermaster')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'clustermaster', variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'clustermaster')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'clustermaster', 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
             }
           }
         }
@@ -2477,7 +2546,8 @@
       "zones": [ "[variables('licenseMasterZone')]" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'licensemaster')]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "priority": "[parameters('vmPriority')]",
@@ -2558,6 +2628,45 @@
               "commandToExecute": "[concat('sudo bash install.sh --role license-master --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference('Microsoft.Compute/virtualMachines/licensemaster', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --license-file \"', parameters('licenseFile'), '\" --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
             }
           }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'licensemaster')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'licensemaster', variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'licensemaster')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'licensemaster', 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
+            }
+          }
         }
       ]
     },
@@ -2573,7 +2682,8 @@
         "count": "[parameters('numberOfIndexers')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', concat('indexer', copyindex()))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('indexer', copyindex()))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "priority": "[parameters('vmPriority')]",
@@ -2643,6 +2753,45 @@
               "commandToExecute": "[concat('sudo bash install.sh --role indexer --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/indexer', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --indexer-pipelines ', parameters('indexerPipelines'), ' --vm-sku ', parameters('indexerSku'), ' --dns-zone ', variables('dnsZoneName'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
             }
           }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('indexer', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('indexer', copyindex()), variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('indexer', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('indexer', copyindex()), 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
+            }
+          }
         }
       ]
     },
@@ -2658,7 +2807,8 @@
         "count": "[parameters('numberOfSearchHeads')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', concat('sh', copyindex()))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('sh', copyindex()))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces','splunk')]"
       ],
       "properties": {
         "priority": "[parameters('vmPriority')]",
@@ -2739,6 +2889,45 @@
               "commandToExecute": "[concat('sudo bash install.sh --role search-head --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference(concat('Microsoft.Compute/virtualMachines/sh', copyindex()), '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --sh-instance ', copyindex(), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
             }
           }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('sh', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('sh', copyindex()), variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('sh', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('sh', copyindex()), 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
+            }
+          }
         }
       ]
     },
@@ -2755,7 +2944,8 @@
         "count": "[parameters('numberOfForwarders')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', concat('hf', copyindex()))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('hf', copyindex()))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2836,6 +3026,47 @@
               "commandToExecute": "[concat('sudo bash install.sh --role heavy-forwarder --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --hf-pipelines ', parameters('hfPipelines'), ' --indexer-count ', parameters('numberOfIndexers'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress))]"
             }
           }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "condition": "[parameters('deployHeavyForwarders')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('hf', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('hf', copyindex()), variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "condition": "[parameters('deployHeavyForwarders')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('hf', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('hf', copyindex()), 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
+            }
+          }
         }
       ]
     },
@@ -2852,7 +3083,8 @@
         "count": "[parameters('numberOfSyslogReceivers')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', concat('syslog', copyindex()))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('syslog', copyindex()))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -2930,7 +3162,48 @@
               "fileUris": [ "[variables('syslogInstallScriptPath')]" ]
             },
             "protectedSettings": {
-              "commandToExecute": "[concat('sudo bash install.sh --role syslog-receiver --splunk-uf-url \"', variables('splunkUfDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'))]"
+              "commandToExecute": "[concat('sudo bash install.sh --role syslog-receiver --hec-lb ', if(parameters('deploySyslogReceivers'), if(parameters('HECPublicIp'), reference('Microsoft.Network/publicIPAddresses/hec', '2020-05-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-hec', '2020-05-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), 'null'), ' --conf-url ', variables('configPath'), ' --hec-token ', variables('hecToken'))]"
+            }
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "condition": "[parameters('deploySyslogReceivers')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('syslog', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('syslog', copyindex()), variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "condition": "[parameters('deploySyslogReceivers')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('syslog', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('syslog', copyindex()), 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
             }
           }
         }
@@ -2948,7 +3221,8 @@
         "count": "[parameters('numberOfDeploymentServers')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', concat('ds', copyindex()))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('ds', copyindex()))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -3028,6 +3302,45 @@
               "commandToExecute": "[concat('sudo bash install.sh --role deployment-server --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --dns-zone ', variables('dnsZoneName'), ' --indexer-count ', parameters('numberOfIndexers'))]"
             }
           }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('ds', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('ds', copyindex()), variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat('ds', copyindex()))]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat('ds', copyindex()), 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
+            }
+          }
         }
       ]
     },
@@ -3039,7 +3352,8 @@
       "zones": [ "[variables('shdZone')]" ],
       "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'clustermaster')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'shd')]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -3120,6 +3434,45 @@
               "commandToExecute": "[concat('sudo bash install.sh --role search-head-deployer --splunk-url \"', variables('splunkDownload'), '\" --site ', substring(string(reference('Microsoft.Compute/virtualMachines/shd', '2019-03-01', 'Full').zones), 2, 1), ' --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --indexer-count ', parameters('numberOfIndexers'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'), ' --dns-zone ', variables('dnsZoneName'))]"
             }
           }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'shd')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'shd', variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'shd')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'shd', 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
+            }
+          }
         }
       ]
     },
@@ -3129,9 +3482,9 @@
       "apiVersion": "2019-07-01",
       "location": "[parameters('location')]",
       "zones": [ "[variables('monitoringZone')]" ],
-      "tags": "[if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}'))]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'monitoring')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'monitoring')]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'splunk')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -3217,11 +3570,62 @@
               "commandToExecute": "[concat('sudo bash install.sh --role monitoring-console --splunk-url \"', variables('splunkDownload'), '\" --splunk-user ', parameters('splunkUser'), ' --splunk-password ', parameters('splunkPassword'), ' --conf-url ', variables('configPath'), ' --deployment-server ', if(parameters('dsLbPip'), reference('Microsoft.Network/publicIPAddresses/dslb', '2018-08-01','Full').properties.ipAddress, reference('Microsoft.Network/loadBalancers/loadBalancer-ds', '2018-08-01', 'Full').properties.frontendIPConfigurations[0].properties.privateIPAddress), ' --dns-zone ', variables('dnsZoneName'), ' --sh-count ', parameters('numberOfSearchHeads'), ' --deploy-heavy-forwarders ', parameters('deployHeavyForwarders'), ' --heavy-forwarder-count ', parameters('numberOfForwarders'), ' --pass4symmkey ', parameters('splunkPass4SymmKey'))]"
             }
           }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2019-12-01",
+          "name": "[variables('daExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'monitoring')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'monitoring', variables('mmaExtensionName'))]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+            "type": "[variables('daExtensionType')]",
+            "typeHandlerVersion": "[variables('daExtensionVersion')]",
+            "autoUpgradeMinorVersion": true
+          }
+        },
+        {
+          "type": "extensions",
+          "apiVersion": "2018-06-01",
+          "name": "[variables('mmaExtensionName')]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', 'monitoring')]",
+            "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'monitoring', 'config-app')]"
+          ],
+          "properties": {
+            "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+            "type": "[variables('mmaExtensionType')]",
+            "typeHandlerVersion": "[variables('mmaExtensionVersion')]",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "workspaceId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').customerId]",
+              "stopOnMultipleConnections": true
+            },
+            "protectedSettings": {
+              "workspaceKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'splunk'), '2020-08-01').primarySharedKey]"
+            }
+          }
         }
       ]
     }
   ],
   "outputs": {
+    "subscriptionId": {
+      "type": "string",
+      "value": "[subscription().subscriptionId]"
+    },
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    },
+    "appGwHost": {
+      "type": "string",
+      "value": "[reference('Microsoft.Network/publicIPAddresses/appg', '2020-05-01').dnsSettings.fqdn]"
+    },
     "searchUrl": {
       "type": "string",
       "value": "[concat('http://', reference('Microsoft.Network/publicIPAddresses/appg', '2020-05-01').dnsSettings.fqdn)]"
@@ -3253,6 +3657,18 @@
     "privateDeploymentServerUrl": {
       "type": "string",
       "value": "[concat('http://', reference('Microsoft.Network/applicationGateways/splunk-appg', '2020-05-01').frontendIPConfigurations[1].properties.privateIPAddress, ':8005')]"
+    },
+    "numberOfIndexers": {
+      "type": "int",
+      "value": "[parameters('numberOfIndexers')]"
+    },
+    "vnetName": {
+      "type": "string",
+      "value": "[variables('vnetName')]"
+    },
+    "hecToken": {
+      "type": "string",
+      "value": "[variables('hecToken')]"
     }
   }
 }
