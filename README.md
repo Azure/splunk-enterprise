@@ -79,6 +79,8 @@ The Splunk Enterprise on Azure reference implementation deploys an Indexer clust
 
 In addition to the Indexer instances a Cluster Master VM will be deployed and pre-configured to manage the Indexer cluster.  The Cluster Master VM SKU within the recommended Dds_v4 family is configurable as needed.
 
+**Please note that the web server port for the Cluster Master has been updated to 8001 in the reference implementation to prevent cookie overwrite issues associated with sharing a single frontend host/backend port combination.**
+
 ### Search Heads & Search Head Deployer
 A Search Head is the Splunk Enterprise instance that handles search management functions, directing search requests to the Indexers and then serving the results back to the user. The Search Head Deployer (or Deployer) is the Splunk Enterprise instance that applies a consistent configuration baseline to all Search Head Cluster members.
 
@@ -101,6 +103,8 @@ In deployments with a Search Head cluster [Splunk does not recommend](https://do
 
 The Splunk Enterprise on Azure reference implementation deploys a standalone Search Head to run the Monitoring Console. The Monitoring Console instance is deployed behind an Application Gateway for access to the Splunk UI, this means that if Monitoring Console were to be unavailable it could easily be re-deployed behind the same frontend IP and users could continue to access it via the same URL.
 
+**Please note that the web server port for the Monitoring Console has been updated to 8003 in the reference implementation to prevent cookie overwrite issues associated with sharing a single frontend host/backend port combination.**
+
 ### License Master
 The License Master manages Splunk licensing for all connected components and consolidates data on license usage across the Splunk environment.
 
@@ -116,6 +120,8 @@ A Deployment Server is a Splunk Enterprise instance which acts as a centralised 
 The recommended VM family for the Deployment Server is the general-purpose Dds_v4 family.
 
 The Splunk Enterprise on Azure reference implementation deploys a load balancer to manage deployment clients calls to the Deployment Server. Additional Deployment Server instances can be added to the load balancer backend pool based upon availability and scale requirements, for example if a large number of deployment clients are being maintained.
+
+**Please note that the web server port for the Deployment Server has been updated to 8002 in the reference implementation to prevent cookie overwrite issues associated with sharing a single frontend host/backend port combination.**
 
 ### Heavy Forwarders
 Splunk recommends the use of Universal Forwarders where possible with Heavy Forwarders deployed only when there is a specific requirement such as certain Technical Add-ons as described below. Heavy Forwarders should not be used as an intermediate forwarding or aggregation tier. For more details please refer to [this Splunk blog post](https://www.splunk.com/en_us/blog/tips-and-tricks/universal-or-heavy-that-is-the-question.html).
