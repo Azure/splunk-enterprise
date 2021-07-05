@@ -346,7 +346,7 @@
     },
     "downloadRoot": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/Azure/splunk-enterprise/main",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/splunk-enterprise/minio",
       "metadata": {
         "description": "Root directory for Splunk install scripts and config"
       }
