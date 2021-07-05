@@ -1,0 +1,13 @@
+service:
+  type: LoadBalancer
+  annotations: {
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  }
+
+resources:
+  requests:
+    memory: 2Gi
+    cpu: 1
+  limits:
+    memory: 2Gi
+    cpu: 1

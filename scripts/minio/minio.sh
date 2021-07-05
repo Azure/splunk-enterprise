@@ -1,5 +1,6 @@
 #!/bin/bash
 #Download Helm
+cd /tmp
 wget -O helm.tgz https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz
 tar -zxvf helm.tgz
 mv linux-amd64/helm /usr/local/bin/helm
@@ -10,7 +11,7 @@ az aks get-credentials -g $RESOURCEGROUP -n minio
 #Install minio helm chart
 helm repo add minio https://helm.min.io/
 wget -O values.yaml $DOWNLOADROOT/config/minio/values.yaml
-helm upgrade --install --wait minio minio/minio --set accessKey=$STORAGEACCOUNTNAME --set secretKey=$STORAGEACCOUNTKEY --values values.yaml
+helm upgrade --install --wait minio minio/minio --set azuregateway.enabled=true --set accessKey=$STORAGEACCOUNTNAME --set secretKey=$STORAGEACCOUNTKEY --values values.yaml
 # Get load balancer IP, once available
 until [ $(kubectl get service minio -o=jsonpath='{...ip}') != "" ]; do sleep 15; done
 serviceIp=$(kubectl get service minio -o=jsonpath='{...ip}')

@@ -327,212 +327,6 @@
               ]
             },
             "visible": true
-          },
-          {
-            "name": "licenseMasterSize",
-            "type": "Microsoft.Compute.SizeSelector",
-            "label": "License Master Server Size",
-            "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
-            "constraints": {
-              "allowedSizes": [
-                "Standard_D4ds_v4",
-                "Standard_D8ds_v4",
-                "Standard_D16ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 1
-            },
-            "options": {
-              "hideDiskTypeFilter": true
-            },
-            "osPlatform": "Linux",
-            "imageReference": {
-              "publisher": "Canonical",
-              "offer": "UbuntuServer",
-              "sku": "18.04-LTS"
-            },
-            "count": 1,
-            "visible": true
-          },
-          {
-            "name": "licenseMasterSizeWarning",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[or(equals(steps('splunkConfig').licenseMasterSize, 'Standard_D4ds_v4'), equals(steps('splunkConfig').licenseMasterSize, 'Standard_D8ds_v4'))]",
-            "options": {
-              "icon": "Warning",
-              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
-              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
-            }
-          },
-          {
-            "name": "licenseMasterPip",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Provision License Master VM Public IP",
-            "defaultValue": "No",
-            "toolTip": "Attach public IP address to License Master VM instance",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "No",
-                  "value": false
-                },
-                {
-                  "label": "Yes",
-                  "value": true
-                }
-              ],
-              "required": true
-            },
-            "visible": true
-          },
-          {
-            "name": "deploymentServerCount",
-            "type": "Microsoft.Common.Slider",
-            "min": 1,
-            "max": 10,
-            "label": "Number of Deployment Servers",
-            "subLabel": "Virtual Machines",
-            "defaultValue": 1,
-            "showStepMarkers": false,
-            "toolTip": "Select the number of Deployment Server VMs",
-            "constraints": {
-              "required": true
-            },
-            "visible": false
-          },
-          {
-            "name": "deploymentServerSize",
-            "type": "Microsoft.Compute.SizeSelector",
-            "label": "Deployment Server Size",
-            "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
-            "constraints": {
-              "allowedSizes": [
-                "Standard_D4ds_v4",
-                "Standard_D8ds_v4",
-                "Standard_D16ds_v4"
-              ],
-              "numAvailabilityZonesRequired": 3
-            },
-            "options": {
-              "hideDiskTypeFilter": true
-            },
-            "osPlatform": "Linux",
-            "imageReference": {
-              "publisher": "Canonical",
-              "offer": "UbuntuServer",
-              "sku": "18.04-LTS"
-            },
-            "count": 1,
-            "visible": true
-          },
-          {
-            "name": "dsPip",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Provision Deployment Server VM Public IPs",
-            "defaultValue": "No",
-            "toolTip": "Attach public IP addresses to Deployment Server VM instance",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "No",
-                  "value": false
-                },
-                {
-                  "label": "Yes",
-                  "value": true
-                }
-              ],
-              "required": true
-            },
-            "visible": true
-          },
-          {
-            "name": "dsLbPip",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Provision Deployment Server Load Balancer Public IP",
-            "defaultValue": "No",
-            "toolTip": "The Deployment Server load balancer enables future scale-out of Deployment Server instances. This option allows you to attach a public IP to this component.",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "No",
-                  "value": false
-                },
-                {
-                  "label": "Yes",
-                  "value": true
-                }
-              ],
-              "required": true
-            },
-            "visible": true
-          },
-          {
-            "name": "deploymentServerSizeWarning",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[or(equals(steps('splunkConfig').deploymentServerSize, 'Standard_D4ds_v4'), equals(steps('splunkConfig').deploymentServerSize, 'Standard_D8ds_v4'))]",
-            "options": {
-              "icon": "Warning",
-              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
-              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
-            }
-          },
-          {
-            "name": "monitoringConsoleSize",
-            "type": "Microsoft.Compute.SizeSelector",
-            "label": "Monitoring Console VM Size",
-            "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
-            "constraints": {
-              "allowedSizes": [
-                "Standard_D4ds_v4",
-                "Standard_D8ds_v4",
-                "Standard_D16ds_v4"
-              ]
-            },
-            "options": {
-              "hideDiskTypeFilter": true
-            },
-            "osPlatform": "Linux",
-            "imageReference": {
-              "publisher": "Canonical",
-              "offer": "UbuntuServer",
-              "sku": "18.04-LTS"
-            },
-            "count": 1,
-            "visible": true
-          },
-          {
-            "name": "monitoringConsoleSizeWarning",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[or(equals(steps('splunkConfig').monitoringConsoleSize, 'Standard_D4ds_v4'), equals(steps('splunkConfig').monitoringConsoleSize, 'Standard_D8ds_v4'))]",
-            "options": {
-              "icon": "Warning",
-              "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
-              "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
-            }
-          },
-          {
-            "name": "monitoringPip",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Provision Monitoring Console VM Public IP",
-            "defaultValue": "No",
-            "toolTip": "Attach public IP address to Monitoring Console VM instance",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "No",
-                  "value": false
-                },
-                {
-                  "label": "Yes",
-                  "value": true
-                }
-              ],
-              "required": true
-            },
-            "visible": true
           }
         ]
       },
@@ -777,71 +571,6 @@
               "required": true
             },
             "visible": true
-          },
-          {
-            "name": "deployHEC",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Configure HTTP Event Collection on Indexers",
-            "defaultValue": "No",
-            "toolTip": "",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "No",
-                  "value": false
-                },
-                {
-                  "label": "Yes",
-                  "value": true
-                }
-              ],
-              "required": true
-            },
-            "visible": true
-          },
-          {
-            "name": "HECPublicIp",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Use Public IP for HTTP Event Collection",
-            "defaultValue": "No",
-            "toolTip": "",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "No",
-                  "value": false
-                },
-                {
-                  "label": "Yes",
-                  "value": true
-                }
-              ],
-              "required": true
-            },
-            "visible": "[steps('indexerConfig').deployHEC]"
-          },
-          {
-            "name": "splunkHecCidr",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Source CIDR block for HEC access",
-            "placeholder": "",
-            "defaultValue": "0.0.0.0/0",
-            "toolTip": "Source address range for access to HTTP Event Collector port",
-            "constraints": {
-              "required": true,
-              "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
-              "validationMessage": "Source prefix must be provided in valid CIDR notation e.g. 10.0.0.0/16"
-            },
-            "visible": "[steps('indexerConfig').deployHEC]"
-          },
-          {
-            "name": "hecPublicAccessWarning",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[equals(steps('indexerConfig').splunkHecCidr, '0.0.0.0/0')]",
-            "options": {
-              "icon": "Warning",
-              "text": "This CIDR block allows HEC access from all public IP addresses. We recommend you apply a more specific source prefix for additional security."
-            }
           }
         ]
       },
@@ -967,6 +696,218 @@
             },
             "visible": true
           }
+        ]
+      },
+      {
+        "name": "managementConfig",
+        "label": "Management Configuration",
+        "elements": [
+            {
+              "name": "licenseMasterSize",
+              "type": "Microsoft.Compute.SizeSelector",
+              "label": "License Master Server Size",
+              "toolTip": "",
+              "recommendedSizes": ["Standard_D16ds_v4"],
+              "constraints": {
+                "allowedSizes": [
+                  "Standard_D4ds_v4",
+                  "Standard_D8ds_v4",
+                  "Standard_D16ds_v4"
+                ],
+                "numAvailabilityZonesRequired": 1
+              },
+              "options": {
+                "hideDiskTypeFilter": true
+              },
+              "osPlatform": "Linux",
+              "imageReference": {
+                "publisher": "Canonical",
+                "offer": "UbuntuServer",
+                "sku": "18.04-LTS"
+              },
+              "count": 1,
+              "visible": true
+            },
+            {
+              "name": "licenseMasterSizeWarning",
+              "type": "Microsoft.Common.InfoBox",
+              "visible": "[or(equals(steps('managementConfig').licenseMasterSize, 'Standard_D4ds_v4'), equals(steps('managementConfig').licenseMasterSize, 'Standard_D8ds_v4'))]",
+              "options": {
+                "icon": "Warning",
+                "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+                "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+              }
+            },
+            {
+              "name": "licenseMasterPip",
+              "type": "Microsoft.Common.OptionsGroup",
+              "label": "Provision License Master VM Public IP",
+              "defaultValue": "No",
+              "toolTip": "Attach public IP address to License Master VM instance",
+              "constraints": {
+                "allowedValues": [
+                  {
+                    "label": "No",
+                    "value": false
+                  },
+                  {
+                    "label": "Yes",
+                    "value": true
+                  }
+                ],
+                "required": true
+              },
+              "visible": true
+            },
+            {
+              "name": "deploymentServerCount",
+              "type": "Microsoft.Common.Slider",
+              "min": 1,
+              "max": 10,
+              "label": "Number of Deployment Servers",
+              "subLabel": "Virtual Machines",
+              "defaultValue": 1,
+              "showStepMarkers": false,
+              "toolTip": "Select the number of Deployment Server VMs",
+              "constraints": {
+                "required": true
+              },
+              "visible": false
+            },
+            {
+              "name": "deploymentServerSize",
+              "type": "Microsoft.Compute.SizeSelector",
+              "label": "Deployment Server Size",
+              "toolTip": "",
+              "recommendedSizes": ["Standard_D16ds_v4"],
+              "constraints": {
+                "allowedSizes": [
+                  "Standard_D4ds_v4",
+                  "Standard_D8ds_v4",
+                  "Standard_D16ds_v4"
+                ],
+                "numAvailabilityZonesRequired": 3
+              },
+              "options": {
+                "hideDiskTypeFilter": true
+              },
+              "osPlatform": "Linux",
+              "imageReference": {
+                "publisher": "Canonical",
+                "offer": "UbuntuServer",
+                "sku": "18.04-LTS"
+              },
+              "count": 1,
+              "visible": true
+            },
+            {
+              "name": "dsPip",
+              "type": "Microsoft.Common.OptionsGroup",
+              "label": "Provision Deployment Server VM Public IPs",
+              "defaultValue": "No",
+              "toolTip": "Attach public IP addresses to Deployment Server VM instance",
+              "constraints": {
+                "allowedValues": [
+                  {
+                    "label": "No",
+                    "value": false
+                  },
+                  {
+                    "label": "Yes",
+                    "value": true
+                  }
+                ],
+                "required": true
+              },
+              "visible": true
+            },
+            {
+              "name": "dsLbPip",
+              "type": "Microsoft.Common.OptionsGroup",
+              "label": "Provision Deployment Server Load Balancer Public IP",
+              "defaultValue": "No",
+              "toolTip": "The Deployment Server load balancer enables future scale-out of Deployment Server instances. This option allows you to attach a public IP to this component.",
+              "constraints": {
+                "allowedValues": [
+                  {
+                    "label": "No",
+                    "value": false
+                  },
+                  {
+                    "label": "Yes",
+                    "value": true
+                  }
+                ],
+                "required": true
+              },
+              "visible": true
+            },
+            {
+              "name": "deploymentServerSizeWarning",
+              "type": "Microsoft.Common.InfoBox",
+              "visible": "[or(equals(steps('managementConfig').deploymentServerSize, 'Standard_D4ds_v4'), equals(steps('managementConfig').deploymentServerSize, 'Standard_D8ds_v4'))]",
+              "options": {
+                "icon": "Warning",
+                "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+                "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+              }
+            },
+            {
+              "name": "monitoringConsoleSize",
+              "type": "Microsoft.Compute.SizeSelector",
+              "label": "Monitoring Console VM Size",
+              "toolTip": "",
+              "recommendedSizes": ["Standard_D16ds_v4"],
+              "constraints": {
+                "allowedSizes": [
+                  "Standard_D4ds_v4",
+                  "Standard_D8ds_v4",
+                  "Standard_D16ds_v4"
+                ]
+              },
+              "options": {
+                "hideDiskTypeFilter": true
+              },
+              "osPlatform": "Linux",
+              "imageReference": {
+                "publisher": "Canonical",
+                "offer": "UbuntuServer",
+                "sku": "18.04-LTS"
+              },
+              "count": 1,
+              "visible": true
+            },
+            {
+              "name": "monitoringConsoleSizeWarning",
+              "type": "Microsoft.Common.InfoBox",
+              "visible": "[or(equals(steps('managementConfig').monitoringConsoleSize, 'Standard_D4ds_v4'), equals(steps('managementConfig').monitoringConsoleSize, 'Standard_D8ds_v4'))]",
+              "options": {
+                "icon": "Warning",
+                "text": "You have selected a VM SKU with fewer than the recommended number of CPU cores for Splunk Enterprise",
+                "uri": "https://docs.splunk.com/Documentation/Splunk/8.0.5/Capacity/Referencehardware"
+              }
+            },
+            {
+              "name": "monitoringPip",
+              "type": "Microsoft.Common.OptionsGroup",
+              "label": "Provision Monitoring Console VM Public IP",
+              "defaultValue": "No",
+              "toolTip": "Attach public IP address to Monitoring Console VM instance",
+              "constraints": {
+                "allowedValues": [
+                  {
+                    "label": "No",
+                    "value": false
+                  },
+                  {
+                    "label": "Yes",
+                    "value": true
+                  }
+                ],
+                "required": true
+              },
+              "visible": true
+            }
         ]
       },
       {
@@ -1205,20 +1146,78 @@
             "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
           },
           {
-            "name": "splunkInstallerUfURL",
+            "name": "hecRequired",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[steps('forwarderConfig').deploySyslogReceivers]",
+            "options": {
+              "icon": "Info",
+              "text": "If Syslog Receivers are required HTTP Event Collection must be enabled, as the Splunk Connect for Syslog sends syslog events over HTTP to Splunk."
+            }
+          },
+          {
+            "name": "deployHEC",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Configure HTTP Event Collection on Indexers",
+            "defaultValue": "No",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": true
+          },
+          {
+            "name": "HECPublicIp",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Use Public IP for HTTP Event Collection",
+            "defaultValue": "No",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": false
+                },
+                {
+                  "label": "Yes",
+                  "value": true
+                }
+              ],
+              "required": true
+            },
+            "visible": "[steps('forwarderConfig').deployHEC]"
+          },
+          {
+            "name": "splunkHecCidr",
             "type": "Microsoft.Common.TextBox",
-            "label": "Splunk Universal Forwarder Install URL",
-            "toolTip": "Enter a valid URL to download your Splunk license",
+            "label": "Source CIDR block for HEC access",
+            "placeholder": "",
+            "defaultValue": "0.0.0.0/0",
+            "toolTip": "Source address range for access to HTTP Event Collector port",
             "constraints": {
               "required": true,
-              "validations": [
-                {
-                  "regex": "^(www\\.|http:\\/\\/|https:\\/\\/)",
-                  "message": "Please enter a valid URL which starts with www., https:// or http://"
-                }
-              ]
+              "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+              "validationMessage": "Source prefix must be provided in valid CIDR notation e.g. 10.0.0.0/16"
             },
-            "visible": "[steps('forwarderConfig').deploySyslogReceivers]"
+            "visible": "[steps('forwarderConfig').deployHEC]"
+          },
+          {
+            "name": "hecPublicAccessWarning",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('forwarderConfig').splunkHecCidr, '0.0.0.0/0')]",
+            "options": {
+              "icon": "Warning",
+              "text": "This CIDR block allows HEC access from all public IP addresses. We recommend you apply a more specific source prefix for additional security."
+            }
           }
         ]
       },
@@ -1249,7 +1248,6 @@
       "location": "[location()]",
       "tagsByResource": "[steps('tags').tagsByResource]",
       "splunkBlobUrl": "[steps('splunkConfig').splunkInstallerURL]",
-      "splunkUfBlobUrl": "[steps('forwarderConfig').splunkInstallerUfURL]",
       "virtualNetworkAddressPrefix": "[steps('nwConfig').vnetConfig.addressPrefixes]",
       "indexerSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet1.addressPrefix]",
       "searchSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet2.addressPrefix]",
@@ -1261,25 +1259,25 @@
       "coldDiskSize": "[steps('indexerConfig').coldDiskSize]",
       "deployHeavyForwarders": "[steps('forwarderConfig').deployHeavyForwarders]",
       "hfPip": "[steps('forwarderConfig').hfPip]",
-      "dsPip": "[steps('splunkConfig').dsPip]",
-      "dsLbPip": "[steps('splunkConfig').dsLbPip]",
+      "dsPip": "[steps('managementConfig').dsPip]",
+      "dsLbPip": "[steps('managementConfig').dsLbPip]",
       "shdPip": "[steps('shConfig').shdPip]",
       "shPip": "[steps('shConfig').shPip]",
       "clusterMasterPip": "[steps('indexerConfig').clusterMasterPip]",
-      "licenseMasterPip": "[steps('splunkConfig').licenseMasterPip]",
+      "licenseMasterPip": "[steps('managementConfig').licenseMasterPip]",
       "indexerPip": "[steps('indexerConfig').indexerPip]",
-      "monitoringPip": "[steps('splunkConfig').monitoringPip]",
-      "deployHEC": "[steps('indexerConfig').deployHEC]",
-      "HECPublicIp": "[steps('indexerConfig').HECPublicIp]",
+      "monitoringPip": "[steps('managementConfig').monitoringPip]",
+      "deployHEC": "[steps('forwarderConfig').deployHEC]",
+      "HECPublicIp": "[steps('forwarderConfig').HECPublicIp]",
       "numberOfForwarders": "[steps('forwarderConfig').heavyForwarderCount]",
       "hfSku": "[steps('forwarderConfig').heavyForwarderSize]",
       "hfPipelines": "[steps('forwarderConfig').hfPipelines]",
       "licenseFile": "[steps('splunkConfig').splunkLicenseFile]",
-      "licenseMasterSku": "[steps('splunkConfig').licenseMasterSize]",
-      "monitoringConsoleSku": "[steps('splunkConfig').monitoringConsoleSize]",
+      "licenseMasterSku": "[steps('managementConfig').licenseMasterSize]",
+      "monitoringConsoleSku": "[steps('managementConfig').monitoringConsoleSize]",
       "cmSku": "[steps('indexerConfig').clusterMasterSize]",
-      "numberOfDeploymentServers": "[steps('splunkConfig').deploymentServerCount]",
-      "deploymentServerSku": "[steps('splunkConfig').deploymentServerSize]",
+      "numberOfDeploymentServers": "[steps('managementConfig').deploymentServerCount]",
+      "deploymentServerSku": "[steps('managementConfig').deploymentServerSize]",
       "shdSku": "[steps('shConfig').shDeployerSize]",
       "replicationFactor": "[steps('indexerConfig').replicationFactor]",
       "searchFactor": "[steps('indexerConfig').searchFactor]",
@@ -1288,7 +1286,7 @@
       "splunkUser": "[steps('splunkConfig').splunkUser]",
       "splunkPassword": "[steps('splunkConfig').splunkPassword]",
       "splunkPass4SymmKey": "[steps('splunkConfig').splunkPass4SymmKey]",
-      "splunkHecCidr": "[steps('indexerConfig').splunkHecCidr]",
+      "splunkHecCidr": "[steps('forwarderConfig').splunkHecCidr]",
       "coldStorageTier": "[steps('indexerConfig').coldStorageTier]",
       "deploySyslogReceivers": "[steps('forwarderConfig').deploySyslogReceivers]",
       "numberOfSyslogReceivers": "[steps('forwarderConfig').syslogReceiverCount]",

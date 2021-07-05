@@ -9,8 +9,8 @@ SPLUNKLOCAL=$SPLUNKHOME/etc/system/local
 # Parse command-line options
 
 # Option strings
-SHORT=s:u:p:r:l:d:c:D:i:h:I:v:P:a:R:S:H:C:n:f:N:
-LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-file:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,availability-zone:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:,storage-account:,storage-account-key:,minio-loadbalancer:
+SHORT=U:u:p:r:l:d:c:D:i:h:I:v:P:s:R:S:H:C:n:f:N:A:k:L:t:
+LONG=splunk-url:,splunk-user:,splunk-password:,role:,license-file:,deployment-server:,conf-url:,dns-zone:,indexer-count:,hf-pipelines:,indexer-pipelines:,vm-sku:,pass4symmkey:,site:,replication-factor:,search-factor:,deploy-hec:,sh-count:,sh-instance:,deploy-heavy-forwarders:,heavy-forwarder-count:,storage-account:,storage-account-key:,minio-loadbalancer:,hec-token:
 
 # Get options
 OPTS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
@@ -24,7 +24,7 @@ SPLUNKUSER=splunkadmin
 # Set variables 
 while true ; do
   case "$1" in
-    -s | --splunk-url )
+    -U | --splunk-url )
       SPLUNKURL="$2"
       shift 2
       ;;
@@ -76,8 +76,8 @@ while true ; do
       PASS4SYMMKEY="$2"
       shift 2
       ;;
-    -a | --availability-zone )
-      AZ="$2"
+    -s | --site )
+      SITE="$2"
       shift 2
       ;;
     -R | --replication-factor )
@@ -120,6 +120,10 @@ while true ; do
       MINIOLB="$2"
       shift 2
       ;;
+    -t | --hec-token )
+      HECTOKEN="$2"
+      shift 2
+      ;;
     -- )
       shift
       break
@@ -144,7 +148,7 @@ echo "LICENSEMASTERHOST = $LICENSEMASTERHOST"
 echo "HFPIPELINES = $HFPIPELINES"
 echo "VMSKU = $VMSKU"
 echo "INDEXERPIPELINES = $INDEXERPIPELINES"
-echo "AZ = $AZ"
+echo "SITE = $SITE"
 echo "REPLICATIONFACTOR = $REPLICATIONFACTOR"
 echo "SEARCHFACTOR = $SEARCHFACTOR"
 echo "DEPLOYHEC = $DEPLOYHEC"
@@ -156,6 +160,7 @@ echo "STORAGEACCOUNT = $STORAGEACCOUNT"
 echo "MINIOLB = $MINIOLB"
 STORAGEACCOUNTKEYLENGTH=${#STORAGEACCOUNTKEY}
 echo "STORAGEACCOUNTKEYLENGTH = $STORAGEACCOUNTKEYLENGTH"
+echo "HECTOKEN = $HECTOKEN"
 
 # Set common and role-specific URLs
 COMMONCONFURL=$CONFURL/common
@@ -172,6 +177,9 @@ SHDEPLOYERHOST=shd.$DNSZONE
 # Open required ports for Splunk
 if test -f /etc/redhat-release; then
   firewall-cmd --zone=public --add-port=8000/tcp --permanent
+  firewall-cmd --zone=public --add-port=8001/tcp --permanent
+  firewall-cmd --zone=public --add-port=8002/tcp --permanent
+  firewall-cmd --zone=public --add-port=8003/tcp --permanent
   firewall-cmd --zone=public --add-port=8089/tcp --permanent
   firewall-cmd --zone=public --add-port=9997/tcp --permanent
   firewall-cmd --zone=public --add-port=8181/tcp --permanent
@@ -247,6 +255,7 @@ fi
 # Download user-seed.conf and server.conf - applies to all Splunk instance roles
 wget -nv -O $SPLUNKLOCAL/user-seed.conf "$COMMONCONFURL/etc/system/local/user-seed.conf"
 wget -nv -O $SPLUNKLOCAL/server.conf "$ROLECONFURL/etc/system/local/server.conf"
+wget -nv -O $SPLUNKLOCAL/web.conf "$ROLECONFURL/etc/system/local/web.conf"
 
 # Create PW hash for writing to config
 SPLUNKPWHASHED=$($SPLUNKHOME/bin/splunk hash-passwd $SPLUNKPW)
@@ -259,7 +268,7 @@ sed -i "s/##SPLUNKUSER##/$SPLUNKUSER/g" $SPLUNKLOCAL/user-seed.conf
 sed -i "s/##LICENSEMASTERHOST##/$LICENSEMASTERHOST/g" $SPLUNKLOCAL/server.conf
 
 # Replace AZ placeholder in server.conf 
-sed -i "s/##ZONE##/$AZ/g" $SPLUNKLOCAL/server.conf
+sed -i "s/##SITE##/$SITE/g" $SPLUNKLOCAL/server.conf
 
 # Replace cluster master host in server.conf
 sed -i "s/##CLUSTERMASTERHOST##/$CLUSTERMASTERHOST/g" $SPLUNKLOCAL/server.conf
@@ -275,7 +284,7 @@ sed -i "s/##SECRET##/$PASS4SYMMKEY/g" $SPLUNKLOCAL/server.conf
 sed -i "s/##HOSTNAME##/$HOSTNAME/g" $SPLUNKLOCAL/server.conf
 
 # Construct indexer list for Deployment Server, Search Head Deployer and Heavy Forwarders
-if [ "$ROLE" = "deployment-server" ] || [ "$ROLE" = "search-head-deployer" ]; then
+if [ "$ROLE" = "deployment-server" ] || [ "$ROLE" = "search-head-deployer" ] || [ "$ROLE" = "heavy-forwarder" ]; then
     INDEXERCOUNT=$(($INDEXERCOUNT - 1))
     INDEXERLIST=indexer0.$DNSZONE:9997
     if test $INDEXERCOUNT -gt 0; then
@@ -301,8 +310,7 @@ case "$ROLE" in
             mkdir $MASTERAPPS/httpeventconfig
             mkdir $MASTERAPPS/httpeventconfig/local
             wget -nv -O $MASTERAPPS/httpeventconfig/local/inputs.conf "$ROLECONFURL/etc/master-apps/httpeventconfig/local/inputs.conf"
-            TOKEN=$(uuidgen)
-            sed -i "s/##TOKEN##/$TOKEN/g" $MASTERAPPS/httpeventconfig/local/inputs.conf
+            sed -i "s/##TOKEN##/$HECTOKEN/g" $MASTERAPPS/httpeventconfig/local/inputs.conf
         else
             echo "HTTP Event Collection not required, continuing..."
         fi
@@ -310,16 +318,17 @@ case "$ROLE" in
         SITESEARCHFACTOR=$(($SEARCHFACTOR/3))
 
         if [ $SITEREPLICATIONFACTOR = "0" ]; then
-            sed -i "s/##REPLICATIONFACTOR##/site_replication_factor = origin:1,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
+            sed -i "s/##SITEREPLICATIONFACTOR##/site_replication_factor = origin:1,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
         else
-            sed -i "s/##REPLICATIONFACTOR##/site_replication_factor = origin:1,site1:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf 
+            sed -i "s/##SITEREPLICATIONFACTOR##/site_replication_factor = origin:1,site1:$SITEREPLICATIONFACTOR,site2:$SITEREPLICATIONFACTOR,site3:$SITEREPLICATIONFACTOR,total:$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf 
         fi
-
+        sed -i "s/##REPLICATIONFACTOR##/$REPLICATIONFACTOR/g" $SPLUNKLOCAL/server.conf
         if [ $SITESEARCHFACTOR = "0" ]; then
-            sed -i "s/##SEARCHFACTOR##/site_search_factor = origin:1,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
+            sed -i "s/##SITESEARCHFACTOR##/site_search_factor = origin:1,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
         else
-            sed -i "s/##SEARCHFACTOR##/site_search_factor = origin:1,site1:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf 
+            sed -i "s/##SITESEARCHFACTOR##/site_search_factor = origin:1,site1:$SITESEARCHFACTOR,site2:$SITESEARCHFACTOR,site3:$SITESEARCHFACTOR,total:$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
         fi
+        sed -i "s/##SEARCHFACTOR##/$SEARCHFACTOR/g" $SPLUNKLOCAL/server.conf
         ;;
     indexer )
         wget -nv -O $SPLUNKLOCAL/inputs.conf "$COMMONCONFURL/etc/system/local/inputs.conf"
@@ -339,7 +348,7 @@ case "$ROLE" in
         ;;
     license-master )
         mkdir -p $SPLUNKHOME/etc/licenses/enterprise
-        echo $LICENSEFILE | base64 -d > $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic
+        echo $LICENSEFILE | base64 -di > $SPLUNKHOME/etc/licenses/enterprise/Splunk.License.lic
         ;;
     search-head-deployer )
         mkdir -p $SPLUNKHOME/etc/shcluster/apps/default_outputs/local
