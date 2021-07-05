@@ -96,6 +96,17 @@
                   "minAddressPrefixSize": "/28",
                   "requireContiguousAddresses": true
                 }
+              },
+              "subnet7": {
+                "label": "SmartStore Subnet",
+                "defaultValue": {
+                  "name": "SmartStore",
+                  "addressPrefixSize": "/23"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/25",
+                  "requireContiguousAddresses": true
+                }
               }
             },
             "visible": true
@@ -1255,6 +1266,7 @@
       "forwarderSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet4.addressPrefix]",
       "bastionSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet5.addressPrefix]",
       "appGSubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet6.addressPrefix]",
+      "s2SubnetAddressPrefix": "[steps('nwConfig').vnetConfig.subnets.subnet7.addressPrefix]",
       "hotDiskSize": "[steps('indexerConfig').hotDiskSize]",
       "coldDiskSize": "[steps('indexerConfig').coldDiskSize]",
       "deployHeavyForwarders": "[steps('forwarderConfig').deployHeavyForwarders]",
