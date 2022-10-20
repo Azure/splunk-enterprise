@@ -2,6 +2,9 @@
 <img src="https://aka.ms/deploytoazurebutton"/>
 </a>
 
+| :exclamation:  Please note that this repository is not actively being developed and some of the information may be out of date (including VM SKU versions).   |
+|-----------------------------------------|
+
 # Introduction 
 This documentation provides detailed guidance to support the deployment of Splunk Enterprise on Azure in line with [Splunk Validated Architectures](https://www.splunk.com/pdfs/technical-briefs/splunk-validated-architectures.pdf) and the following key priorities:
 
