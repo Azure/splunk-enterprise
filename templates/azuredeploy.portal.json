@@ -343,13 +343,21 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Cluster Master Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
+            "recommendedSizes": ["Standard_D16ds_v5"],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
                 "Standard_D16ds_v4",
-                "Standard_D32ds_v4"
+                "Standard_D32ds_v4",
+                "Standard_D4ds_v5",
+                "Standard_D8ds_v5",
+                "Standard_D16ds_v5",
+                "Standard_D32ds_v5",
+                "Standard_D4ads_v5",
+                "Standard_D8ads_v5",
+                "Standard_D16ads_v5",
+                "Standard_D32ads_v5"
               ]
             },
             "options": {
@@ -415,16 +423,28 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Indexer Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_L64s_v2", "Standard_D64ds_v4"],
+            "recommendedSizes": ["Standard_L80s_v3", "Standard_D96ds_v5"],
             "constraints": {
               "allowedSizes": [
                 "Standard_L16s_v2",
                 "Standard_L32s_v2",
                 "Standard_L64s_v2",
                 "Standard_L80s_v2",
+                "Standard_L16s_v3",
+                "Standard_L32s_v3",
+                "Standard_L64s_v3",
+                "Standard_L80s_v3",
                 "Standard_D16ds_v4",
                 "Standard_D32ds_v4",
-                "Standard_D64ds_v4"
+                "Standard_D64ds_v4",
+                "Standard_D16ds_v5",
+                "Standard_D32ds_v5",
+                "Standard_D64ds_v5",
+                "Standard_D96ds_v5",
+                "Standard_D16ads_v5",
+                "Standard_D32ads_v5",
+                "Standard_D64ads_v5",
+                "Standard_D96ads_v5"
               ],
               "numAvailabilityZonesRequired": 3
             },
@@ -602,12 +622,20 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Search Head Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D64ds_v4"],
+            "recommendedSizes": ["Standard_D64ds_v5"],
             "constraints": {
               "allowedSizes": [
                 "Standard_D16ds_v4",
                 "Standard_D32ds_v4",
-                "Standard_D64ds_v4"
+                "Standard_D64ds_v4",
+                "Standard_D16ds_v5",
+                "Standard_D32ds_v5",
+                "Standard_D64ds_v5",
+                "Standard_D96ds_v5",
+                "Standard_D16ads_v5",
+                "Standard_D32ads_v5",
+                "Standard_D64ads_v5",
+                "Standard_D96ads_v5"
               ],
               "numAvailabilityZonesRequired": 3
             },
@@ -649,12 +677,18 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Search Head Deployer Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D16ds_v4"],
+            "recommendedSizes": ["Standard_D16ds_v5"],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
-                "Standard_D16ds_v4"
+                "Standard_D16ds_v4",
+                "Standard_D4ds_v5",
+                "Standard_D8ds_v5",
+                "Standard_D16ds_v5",
+                "Standard_D4ads_v5",
+                "Standard_D8ads_v5",
+                "Standard_D16ads_v5"
               ]
             },
             "options": {
@@ -711,12 +745,18 @@
               "type": "Microsoft.Compute.SizeSelector",
               "label": "License Master Server Size",
               "toolTip": "",
-              "recommendedSizes": ["Standard_D16ds_v4"],
+              "recommendedSizes": ["Standard_D16ds_v5"],
               "constraints": {
                 "allowedSizes": [
                   "Standard_D4ds_v4",
                   "Standard_D8ds_v4",
-                  "Standard_D16ds_v4"
+                  "Standard_D16ds_v4",
+                  "Standard_D4ds_v5",
+                  "Standard_D8ds_v5",
+                  "Standard_D16ds_v5",
+                  "Standard_D4ads_v5",
+                  "Standard_D8ads_v5",
+                  "Standard_D16ads_v5"
                 ],
                 "numAvailabilityZonesRequired": 1
               },
@@ -783,12 +823,18 @@
               "type": "Microsoft.Compute.SizeSelector",
               "label": "Deployment Server Size",
               "toolTip": "",
-              "recommendedSizes": ["Standard_D16ds_v4"],
+              "recommendedSizes": ["Standard_D16ds_v5"],
               "constraints": {
                 "allowedSizes": [
                   "Standard_D4ds_v4",
                   "Standard_D8ds_v4",
-                  "Standard_D16ds_v4"
+                  "Standard_D16ds_v4",
+                  "Standard_D4ds_v5",
+                  "Standard_D8ds_v5",
+                  "Standard_D16ds_v5",
+                  "Standard_D4ads_v5",
+                  "Standard_D8ads_v5",
+                  "Standard_D16ads_v5"
                 ],
                 "numAvailabilityZonesRequired": 3
               },
@@ -861,12 +907,18 @@
               "type": "Microsoft.Compute.SizeSelector",
               "label": "Monitoring Console VM Size",
               "toolTip": "",
-              "recommendedSizes": ["Standard_D16ds_v4"],
+              "recommendedSizes": ["Standard_D16ds_v5"],
               "constraints": {
                 "allowedSizes": [
                   "Standard_D4ds_v4",
                   "Standard_D8ds_v4",
-                  "Standard_D16ds_v4"
+                  "Standard_D16ds_v4",
+                  "Standard_D4ds_v5",
+                  "Standard_D8ds_v5",
+                  "Standard_D16ds_v5",
+                  "Standard_D4ads_v5",
+                  "Standard_D8ads_v5",
+                  "Standard_D16ads_v5"
                 ]
               },
               "options": {
@@ -959,12 +1011,18 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Heavy Forwarder Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D8ds_v4"],
+            "recommendedSizes": ["Standard_D8ds_v5"],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
-                "Standard_D16ds_v4"
+                "Standard_D16ds_v4",
+                "Standard_D4ds_v5",
+                "Standard_D8ds_v5",
+                "Standard_D16ds_v5",
+                "Standard_D4ads_v5",
+                "Standard_D8ads_v5",
+                "Standard_D16ads_v5"
               ],
               "numAvailabilityZonesRequired": 3
             },
@@ -1063,12 +1121,18 @@
             "type": "Microsoft.Compute.SizeSelector",
             "label": "Syslog Receiver Size",
             "toolTip": "",
-            "recommendedSizes": ["Standard_D8ds_v4"],
+            "recommendedSizes": ["Standard_D8ds_v5"],
             "constraints": {
               "allowedSizes": [
                 "Standard_D4ds_v4",
                 "Standard_D8ds_v4",
-                "Standard_D16ds_v4"
+                "Standard_D16ds_v4",
+                "Standard_D4ds_v5",
+                "Standard_D8ds_v5",
+                "Standard_D16ds_v5",
+                "Standard_D4ads_v5",
+                "Standard_D8ads_v5",
+                "Standard_D16ads_v5"
               ],
               "numAvailabilityZonesRequired": 3
             },
