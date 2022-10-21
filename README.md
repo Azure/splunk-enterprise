@@ -1,4 +1,9 @@
-![Build Status](https://dev.azure.com/AZGlobal/Azure%20Global%20CAT%20Engineering/_apis/build/status/Azure.splunk-enterprise?branchName=main)
+<a href="https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fsplunk-enterprise%2Fmain%2Ftemplates%2Fazuredeploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fsplunk-enterprise%2Fmain%2Ftemplates%2Fazuredeploy.portal.json" target="_blank">
+<img src="https://aka.ms/deploytoazurebutton"/>
+</a>
+
+| :exclamation:  Please note that this repository is not being actively maintained and some of the information may be out of date (including VM SKU versions).   |
+|-----------------------------------------|
 
 <a href="https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fsplunk-enterprise%2Fmain%2Ftemplates%2Fazuredeploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fsplunk-enterprise%2Fmain%2Ftemplates%2Fazuredeploy.portal.json" target="_blank">
 <img src="https://aka.ms/deploytoazurebutton"/>
