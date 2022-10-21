@@ -2,7 +2,7 @@
 <img src="https://aka.ms/deploytoazurebutton"/>
 </a>
 
-| :exclamation:  Please note that this repository is not actively being developed and some of the information may be out of date (including VM SKU versions).   |
+| :exclamation:  Please note that this repository is not being actively maintained and some of the information may be out of date (including VM SKU versions).   |
 |-----------------------------------------|
 
 # Introduction 
