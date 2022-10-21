@@ -473,10 +473,10 @@
       "sku": "7.7",
       "version": "latest"
     },
-    "rhel76payg": {
+    "rhel8": {
       "publisher": "RedHat",
       "offer": "RHEL",
-      "sku": "7.6",
+      "sku": "8",
       "version": "latest"
     },
     "ubuntu2004": {
