@@ -16,7 +16,7 @@ parameters:
   default:
   - ubuntu1804
   - centos77
-  - rhel76payg
+  - rhel8
   - ubuntu2004
 
 variables:
